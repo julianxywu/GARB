@@ -1,2 +1,1 @@
-# GARB
-Gaze-Aware Reading-aid for the Browser
+# GARB: Gaze-Aware Reading-aid for the Browser
