@@ -1,0 +1,13 @@
+C:\Users\julianxywu\CSProjects\thesis\tobii\Interactors\Interaction_Interactors_101\bin\Release\Tobii.EyeX.Client.dll
+C:\Users\julianxywu\CSProjects\thesis\tobii\Interactors\Interaction_Interactors_101\bin\Release\Interaction_Interactors_101.exe.config
+C:\Users\julianxywu\CSProjects\thesis\tobii\Interactors\Interaction_Interactors_101\bin\Release\Interaction_Interactors_101.exe
+C:\Users\julianxywu\CSProjects\thesis\tobii\Interactors\Interaction_Interactors_101\bin\Release\Interaction_Interactors_101.pdb
+C:\Users\julianxywu\CSProjects\thesis\tobii\Interactors\Interaction_Interactors_101\bin\Release\Tobii.Interaction.Model.dll
+C:\Users\julianxywu\CSProjects\thesis\tobii\Interactors\Interaction_Interactors_101\bin\Release\Tobii.Interaction.Net.dll
+C:\Users\julianxywu\CSProjects\thesis\tobii\Interactors\Interaction_Interactors_101\bin\Release\websocket-sharp.dll
+C:\Users\julianxywu\CSProjects\thesis\tobii\Interactors\Interaction_Interactors_101\bin\Release\websocket-sharp.xml
+C:\Users\julianxywu\CSProjects\thesis\tobii\Interactors\Interaction_Interactors_101\obj\Release\Interaction_Interactors_101.csprojAssemblyReference.cache
+C:\Users\julianxywu\CSProjects\thesis\tobii\Interactors\Interaction_Interactors_101\obj\Release\Interaction_Interactors_101.csproj.CoreCompileInputs.cache
+C:\Users\julianxywu\CSProjects\thesis\tobii\Interactors\Interaction_Interactors_101\obj\Release\Interaction_Interactors_101.csproj.CopyComplete
+C:\Users\julianxywu\CSProjects\thesis\tobii\Interactors\Interaction_Interactors_101\obj\Release\Interaction_Interactors_101.exe
+C:\Users\julianxywu\CSProjects\thesis\tobii\Interactors\Interaction_Interactors_101\obj\Release\Interaction_Interactors_101.pdb

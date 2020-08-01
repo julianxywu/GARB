@@ -1,0 +1,34 @@
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\Wpf\Interaction_Wpf_101\bin\Debug\Tobii.EyeX.Client.dll
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\Wpf\Interaction_Wpf_101\bin\Debug\Interaction_Wpf_101.exe.config
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\Wpf\Interaction_Wpf_101\bin\Debug\Interaction_Wpf_101.exe
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\Wpf\Interaction_Wpf_101\bin\Debug\Interaction_Wpf_101.pdb
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\Wpf\Interaction_Wpf_101\bin\Debug\Tobii.Interaction.Model.dll
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\Wpf\Interaction_Wpf_101\bin\Debug\Tobii.Interaction.Net.dll
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\Wpf\Interaction_Wpf_101\obj\Debug\MainWindow.baml
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\Wpf\Interaction_Wpf_101\obj\Debug\MainWindow.g.cs
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\Wpf\Interaction_Wpf_101\obj\Debug\App.g.cs
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\Wpf\Interaction_Wpf_101\obj\Debug\Interaction_Wpf_101_MarkupCompile.cache
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\Wpf\Interaction_Wpf_101\obj\Debug\Interaction_Wpf_101.g.resources
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\Wpf\Interaction_Wpf_101\obj\Debug\Interaction_Wpf_101.Properties.Resources.resources
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\Wpf\Interaction_Wpf_101\obj\Debug\Interaction_Wpf_101.csproj.GenerateResource.Cache
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\Wpf\Interaction_Wpf_101\obj\Debug\Interaction_Wpf_101.csproj.CoreCompileInputs.cache
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\Wpf\Interaction_Wpf_101\obj\Debug\Interaction_Wpf_101.exe
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\Wpf\Interaction_Wpf_101\obj\Debug\Interaction_Wpf_101.pdb
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\bin\Debug\Tobii.EyeX.Client.dll
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\bin\Debug\Interaction_Wpf_101.exe.config
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\bin\Debug\Interaction_Wpf_101.exe
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\bin\Debug\Interaction_Wpf_101.pdb
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\bin\Debug\Tobii.Interaction.Model.dll
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\bin\Debug\Tobii.Interaction.Net.dll
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\obj\Debug\Interaction_Wpf_101.csprojAssemblyReference.cache
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\obj\Debug\MainWindow.baml
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\obj\Debug\MainWindow.g.cs
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\obj\Debug\App.g.cs
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\obj\Debug\Interaction_Wpf_101_MarkupCompile.cache
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\obj\Debug\Interaction_Wpf_101.g.resources
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\obj\Debug\Interaction_Wpf_101.Properties.Resources.resources
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\obj\Debug\Interaction_Wpf_101.csproj.GenerateResource.cache
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\obj\Debug\Interaction_Wpf_101.csproj.CoreCompileInputs.cache
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\obj\Debug\Interaction_Wpf_101.csproj.CopyComplete
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\obj\Debug\Interaction_Wpf_101.exe
+C:\Users\julianxywu\CSProjects\thesis\tobii\Wpf\Interaction_Wpf_101\obj\Debug\Interaction_Wpf_101.pdb

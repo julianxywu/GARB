@@ -1,0 +1,9 @@
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\States\Interaction_States_102\bin\x86\Debug\Tobii.EyeX.Client.dll
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\States\Interaction_States_102\bin\x86\Debug\Interaction_States_102.exe.config
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\States\Interaction_States_102\bin\x86\Debug\Interaction_States_102.exe
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\States\Interaction_States_102\bin\x86\Debug\Interaction_States_102.pdb
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\States\Interaction_States_102\bin\x86\Debug\Tobii.Interaction.Model.dll
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\States\Interaction_States_102\bin\x86\Debug\Tobii.Interaction.Net.dll
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\States\Interaction_States_102\obj\x86\Debug\Interaction_States_102.csproj.CoreCompileInputs.cache
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\States\Interaction_States_102\obj\x86\Debug\Interaction_States_102.exe
+C:\Users\Kathryn Faolin\Downloads\CoreSDK-master\CoreSDK-master\samples\States\Interaction_States_102\obj\x86\Debug\Interaction_States_102.pdb

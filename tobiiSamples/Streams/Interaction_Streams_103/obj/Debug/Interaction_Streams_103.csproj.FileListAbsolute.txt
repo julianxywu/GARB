@@ -1,0 +1,11 @@
+C:\Users\julianxywu\CSProjects\thesis\tobii\Streams\Interaction_Streams_103\bin\Debug\Tobii.EyeX.Client.dll
+C:\Users\julianxywu\CSProjects\thesis\tobii\Streams\Interaction_Streams_103\bin\Debug\Interaction_Streams_103.exe.config
+C:\Users\julianxywu\CSProjects\thesis\tobii\Streams\Interaction_Streams_103\bin\Debug\Interaction_Streams_103.exe
+C:\Users\julianxywu\CSProjects\thesis\tobii\Streams\Interaction_Streams_103\bin\Debug\Interaction_Streams_103.pdb
+C:\Users\julianxywu\CSProjects\thesis\tobii\Streams\Interaction_Streams_103\bin\Debug\Tobii.Interaction.Model.dll
+C:\Users\julianxywu\CSProjects\thesis\tobii\Streams\Interaction_Streams_103\bin\Debug\Tobii.Interaction.Net.dll
+C:\Users\julianxywu\CSProjects\thesis\tobii\Streams\Interaction_Streams_103\obj\Debug\Interaction_Streams_103.csprojAssemblyReference.cache
+C:\Users\julianxywu\CSProjects\thesis\tobii\Streams\Interaction_Streams_103\obj\Debug\Interaction_Streams_103.csproj.CoreCompileInputs.cache
+C:\Users\julianxywu\CSProjects\thesis\tobii\Streams\Interaction_Streams_103\obj\Debug\Interaction_Streams_103.csproj.CopyComplete
+C:\Users\julianxywu\CSProjects\thesis\tobii\Streams\Interaction_Streams_103\obj\Debug\Interaction_Streams_103.exe
+C:\Users\julianxywu\CSProjects\thesis\tobii\Streams\Interaction_Streams_103\obj\Debug\Interaction_Streams_103.pdb

@@ -1,0 +1,20 @@
+C:\Users\Kathryn Faolin\Documents\thesis\tobii\States\Interaction_States_101\bin\Debug\Tobii.EyeX.Client.dll
+C:\Users\Kathryn Faolin\Documents\thesis\tobii\States\Interaction_States_101\bin\Debug\Interaction_States_101.exe.config
+C:\Users\Kathryn Faolin\Documents\thesis\tobii\States\Interaction_States_101\bin\Debug\Interaction_States_101.exe
+C:\Users\Kathryn Faolin\Documents\thesis\tobii\States\Interaction_States_101\bin\Debug\Interaction_States_101.pdb
+C:\Users\Kathryn Faolin\Documents\thesis\tobii\States\Interaction_States_101\bin\Debug\Tobii.Interaction.Model.dll
+C:\Users\Kathryn Faolin\Documents\thesis\tobii\States\Interaction_States_101\bin\Debug\Tobii.Interaction.Net.dll
+C:\Users\Kathryn Faolin\Documents\thesis\tobii\States\Interaction_States_101\obj\Debug\Interaction_States_101.csproj.CoreCompileInputs.cache
+C:\Users\Kathryn Faolin\Documents\thesis\tobii\States\Interaction_States_101\obj\Debug\Interaction_States_101.exe
+C:\Users\Kathryn Faolin\Documents\thesis\tobii\States\Interaction_States_101\obj\Debug\Interaction_States_101.pdb
+C:\Users\julianxywu\CSProjects\thesis\tobii\States\Interaction_States_101\bin\Debug\Tobii.EyeX.Client.dll
+C:\Users\julianxywu\CSProjects\thesis\tobii\States\Interaction_States_101\bin\Debug\Interaction_States_101.exe.config
+C:\Users\julianxywu\CSProjects\thesis\tobii\States\Interaction_States_101\bin\Debug\Interaction_States_101.exe
+C:\Users\julianxywu\CSProjects\thesis\tobii\States\Interaction_States_101\bin\Debug\Interaction_States_101.pdb
+C:\Users\julianxywu\CSProjects\thesis\tobii\States\Interaction_States_101\bin\Debug\Tobii.Interaction.Model.dll
+C:\Users\julianxywu\CSProjects\thesis\tobii\States\Interaction_States_101\bin\Debug\Tobii.Interaction.Net.dll
+C:\Users\julianxywu\CSProjects\thesis\tobii\States\Interaction_States_101\obj\Debug\Interaction_States_101.csprojAssemblyReference.cache
+C:\Users\julianxywu\CSProjects\thesis\tobii\States\Interaction_States_101\obj\Debug\Interaction_States_101.csproj.CoreCompileInputs.cache
+C:\Users\julianxywu\CSProjects\thesis\tobii\States\Interaction_States_101\obj\Debug\Interaction_States_101.csproj.CopyComplete
+C:\Users\julianxywu\CSProjects\thesis\tobii\States\Interaction_States_101\obj\Debug\Interaction_States_101.exe
+C:\Users\julianxywu\CSProjects\thesis\tobii\States\Interaction_States_101\obj\Debug\Interaction_States_101.pdb
