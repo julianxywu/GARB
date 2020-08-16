@@ -149,7 +149,7 @@ chrome.runtime.sendMessage(
                 if (tokens[0] === 'during') {
 
                     ///////////////////////////////////////////////////////////
-                    // GET AND TRANSFOR GAZE COORDINATES
+                    // GET AND TRANSFER GAZE COORDINATES
                     ///////////////////////////////////////////////////////////
 
                     // get normalized gaze position
