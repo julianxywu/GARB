@@ -6,6 +6,7 @@ GARB stands for "Gaze-Aware Reading-aid for the Browser," which allows users to 
 Through the use of an extension to simplify webpages and get rid of distracting elements (ads, primarily), users will have less distractions when reading.
 There is also highlighting of lines to track user progress and collect data on the user's reading ability.
 
+### GARB Demo
 ![GARB Demo](OtherFiles/GarbDemo.gif)
 
 ### Requirements
