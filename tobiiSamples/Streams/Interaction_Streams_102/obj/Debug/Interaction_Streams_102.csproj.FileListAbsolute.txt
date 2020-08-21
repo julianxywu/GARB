@@ -18,3 +18,14 @@ C:\Users\julianxywu\CSProjects\thesis\tobii\Streams\Interaction_Streams_102\obj\
 C:\Users\julianxywu\CSProjects\thesis\tobii\Streams\Interaction_Streams_102\obj\Debug\Interaction_Streams_102.csproj.CopyComplete
 C:\Users\julianxywu\CSProjects\thesis\tobii\Streams\Interaction_Streams_102\obj\Debug\Interaction_Streams_102.exe
 C:\Users\julianxywu\CSProjects\thesis\tobii\Streams\Interaction_Streams_102\obj\Debug\Interaction_Streams_102.pdb
+C:\Users\julianxywu\CSProjects\GARB\tobiiSamples\Streams\Interaction_Streams_102\bin\Debug\Tobii.EyeX.Client.dll
+C:\Users\julianxywu\CSProjects\GARB\tobiiSamples\Streams\Interaction_Streams_102\bin\Debug\Interaction_Streams_102.exe.config
+C:\Users\julianxywu\CSProjects\GARB\tobiiSamples\Streams\Interaction_Streams_102\bin\Debug\Interaction_Streams_102.exe
+C:\Users\julianxywu\CSProjects\GARB\tobiiSamples\Streams\Interaction_Streams_102\bin\Debug\Interaction_Streams_102.pdb
+C:\Users\julianxywu\CSProjects\GARB\tobiiSamples\Streams\Interaction_Streams_102\bin\Debug\Tobii.Interaction.Model.dll
+C:\Users\julianxywu\CSProjects\GARB\tobiiSamples\Streams\Interaction_Streams_102\bin\Debug\Tobii.Interaction.Net.dll
+C:\Users\julianxywu\CSProjects\GARB\tobiiSamples\Streams\Interaction_Streams_102\obj\Debug\Interaction_Streams_102.csprojAssemblyReference.cache
+C:\Users\julianxywu\CSProjects\GARB\tobiiSamples\Streams\Interaction_Streams_102\obj\Debug\Interaction_Streams_102.csproj.CoreCompileInputs.cache
+C:\Users\julianxywu\CSProjects\GARB\tobiiSamples\Streams\Interaction_Streams_102\obj\Debug\Interaction_Streams_102.csproj.CopyComplete
+C:\Users\julianxywu\CSProjects\GARB\tobiiSamples\Streams\Interaction_Streams_102\obj\Debug\Interaction_Streams_102.exe
+C:\Users\julianxywu\CSProjects\GARB\tobiiSamples\Streams\Interaction_Streams_102\obj\Debug\Interaction_Streams_102.pdb

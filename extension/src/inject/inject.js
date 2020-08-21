@@ -34,7 +34,9 @@ chrome.runtime.sendMessage(
         var quadContent = "";               // contents of current quadrant span
         var quadNum = 0;                    // which quadrant we're on
         var MAX_QUAD_NUM = 4;               // max number of quadrants in a line
-        
+
+        var currentWord = "";               // the current word that we are looking at
+        console.log("Hello");
         // iterate through every character in received content string
         for (var i = 0; i < rawContentStr.length; i++) {
             var ch = rawContentStr.charAt(i);
@@ -60,19 +62,44 @@ chrome.runtime.sendMessage(
 
             // MAIN CASE - usual case, more common
             else if (ch != "\n") {                // usual case
-                quadContent += ch;                  // add latest ch to content of curr quad
-                numCharsInQuad++;                   // reflect change in num chars var
 
                 // GENERATE QUADRANT SPAN
                 // Current quad reached max size, so generate
                 // span for it and add to array of spans for curr line
-                if (numCharsInQuad == QUAD_SIZE) {
-                    var quadSpan = `<span class="quad" id="${quadNum}${spanNum}">${quadContent}</span>`;
-                    currLineSpans.push(quadSpan);
-                    // set back to initial vals
-                    quadContent = "";
-                    numCharsInQuad = 0;
-                    quadNum++;
+
+                if (quadNum == MAX_QUAD_NUM - 1) {  // if this is the fourth quadrant in the line. we don't want to break up a word
+                    if (ch != " ") {
+                        currentWord += ch;          // add each character to the current word   
+				    }
+
+                    else if (currentWord.length + numCharsInQuad + 1 < QUAD_SIZE) {     // if the current quad size with the addition of the word is still less than the max quad size, add the word.
+                        quadContent = quadContent.concat(currentWord);                  // add the word to the contents of the current quad
+                        quadContent += ch;                                              // add the space
+                        numCharsInQuad += currentWord.length + 1;
+                        currentWord = "";                                               // reset the word
+				    }
+                    else {
+                        var quadSpan = `<span class="quad" id="${quadNum}${spanNum}">${quadContent}</span>`;
+                        currLineSpans.push(quadSpan);
+                        // set back to initial vals
+                        quadContent = currentWord + " ";
+                        numCharsInQuad = currentWord.length + 1;
+                        quadNum++;
+                        currentWord = "";
+					}
+				}
+                else {  // if this is the 1st to 3rd quadrants, we don't care about the breaking up of words
+                    quadContent += ch;                  // add latest ch to content of curr quad
+                    numCharsInQuad++;                   // reflect change in num chars var
+
+                    if (numCharsInQuad >= QUAD_SIZE) {
+                        var quadSpan = `<span class="quad" id="${quadNum}${spanNum}">${quadContent}</span>`;
+                        currLineSpans.push(quadSpan);
+                        // set back to initial vals
+                        quadContent = "";
+                        numCharsInQuad = 0;
+                        quadNum++;
+                    }
                 }
 
                 // GENERATE CONTAINER LINE SPAN
@@ -80,6 +107,8 @@ chrome.runtime.sendMessage(
                 // generated. Put strings representing each individual 
                 // quadrant span into a container span representing
                 // the current line. Add this span to contentHTML
+
+           
                 if (quadNum == MAX_QUAD_NUM) {         // reached end of line (ie add span)
                     contentHTML += `<span class="line" id="${spanNum}">${currLineSpans.join('')}</span>`;
                     // set back to initial vals
@@ -124,6 +153,8 @@ chrome.runtime.sendMessage(
         var initialHighlightingDone = false;
 
         var quadFreqs = [];
+        console.log("Current spanNum: ");
+        console.log(spanNum);
         for(var i = 0; i <= spanNum; i++) {
             quadFreqs.push([0, 0, 0, 0])
         }
@@ -245,7 +276,7 @@ chrome.runtime.sendMessage(
                             // of relevant line in freq matrix
                             quadFreqs[spanNum][quadNum] += 1;
 
-                            // use custom formulat to convert frequencies for each
+                            // use custom formula to convert frequencies for each
                             // quadrant to a single percent read 
                             var freqs = quadFreqs[spanNum];
                             var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);

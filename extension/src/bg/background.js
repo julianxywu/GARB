@@ -11,8 +11,8 @@
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
       if (request.contentScriptQuery == "extractURLContent") {
-        // var url = "https://mysterious-fortress-86319.herokuapp.com/";
-        var url = "https://garb-eyetracking.herokuapp.com/";
+        var url = "https://mysterious-fortress-86319.herokuapp.com/";
+        // var url = "https://garb-eyetracking.herokuapp.com/";
         fetch(url, {
             method: "POST",
             mode: "cors", // no-cors, cors, *same-origin

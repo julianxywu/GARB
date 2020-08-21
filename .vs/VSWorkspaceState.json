@@ -1,11 +1,11 @@
 {
   "ExpandedNodes": [
     "",
-    "\\extension",
-    "\\extension\\src",
     "\\extension\\src\\bg",
-    "\\HTMLExtractionServer"
+    "\\extension\\src\\browser_action",
+    "\\extension\\src\\inject",
+    "\\WindowsEyeServer"
   ],
-  "SelectedNode": "\\HTMLExtractionServer\\test.py",
+  "SelectedNode": "\\WindowsEyeServer\\Interaction_Interactors_101.csproj",
   "PreviewInSolutionExplorer": false
 }
