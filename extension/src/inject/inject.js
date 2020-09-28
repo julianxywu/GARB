@@ -175,7 +175,7 @@ chrome.runtime.sendMessage(
 
             ws.onmessage = function (evt) { 
                 var received_msg = evt.data;
-                // console.log(received_msg);          // uncomment to log all coordinates
+                console.log(received_msg);          // uncomment to log all coordinates // HERE
                 var tokens = received_msg.split('|');
                 if (tokens[0] === 'during') {
 

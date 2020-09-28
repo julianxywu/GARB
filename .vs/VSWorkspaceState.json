@@ -1,9 +1,6 @@
 {
   "ExpandedNodes": [
     "",
-    "\\extension\\src\\bg",
-    "\\extension\\src\\browser_action",
-    "\\extension\\src\\inject",
     "\\WindowsEyeServer"
   ],
   "SelectedNode": "\\WindowsEyeServer\\Interaction_Interactors_101.csproj",
