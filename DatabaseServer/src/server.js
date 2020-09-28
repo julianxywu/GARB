@@ -49,8 +49,8 @@ app.use('', apiRouter);
 // additional init stuff should go before hitting the routing
 // DB Setup
 // const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost/blog';
-const mongoURI = 'mongodb+srv://garb_dbuser:vusW7BJbchkMZ@cluster0.o53iy.mongodb.net/garbdb?retryWrites=true&w=majority' || 'mongodb://localhost/blog';
-// const mongoURI = process.env.MONGODB_URI || 'mongodb://julianxywu:cs52lab5@ds127564.mlab.com:27564/heroku_z8cdtp23';
+//const mongoURI = 'mongodb+srv://garb_dbuser:vusW7BJbchkMZ@cluster0.o53iy.mongodb.net/garbdb?retryWrites=true&w=majority' || 'mongodb://localhost/blog';
+const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost/blog';
 mongoose.connect(mongoURI, { useFindAndModify: false, useNewUrlParser: true, useUnifiedTopology: true });
 // set mongoose promises to es6 default
 mongoose.Promise = global.Promise;
