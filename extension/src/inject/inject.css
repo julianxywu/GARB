@@ -37,7 +37,7 @@ p {
 }
 
 img {
-    max-width: 750px;
+    max-width: fit-content;
 }
 
 .article {

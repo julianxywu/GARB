@@ -439,7 +439,7 @@ chrome.runtime.sendMessage(
 
             ws.onclose = function() { 
                 // websocket is closed.
-                // alert("Connection is closed..."); 
+                alert("Connection is closed..."); 
             };
 
             window.onbeforeunload = function(event) {
@@ -454,6 +454,12 @@ chrome.runtime.sendMessage(
                     data: data
                     };
                     ws.send(JSON.stringify(infoToSend));
+                    
+                    //const fs = require('fs');
+                    //fs.writeFile('Output.txt', data, (err) => {
+                    //    if (err) throw err;           
+					//});
+
                     ws.close();
                 };
             }

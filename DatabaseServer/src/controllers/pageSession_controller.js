@@ -5,7 +5,11 @@ export const createPageSession = (req, res) => {
   const pageSession = new PageSession();
   pageSession.url = req.body.url;
   pageSession.title = req.body.title;
-  pageSession.users = [req.body.user];
+  pageSession.user = req.body.user;
+  pageSession.timestampStart = req.body.timestampStart;
+  pageSession.timestampEnd = req.body.timestampEnd;
+  pageSession.sessionClosed = req.body.sessionClosed;
+  pageSession.quadFreqs = req.body.quadFreqs;
   pageSession.save()
     .then((result) => {
       res.json({ message: 'PageSession created!' });

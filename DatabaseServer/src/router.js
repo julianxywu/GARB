@@ -2,6 +2,7 @@ import { Router } from 'express';
 // import * as Posts from './controllers/post_controller';
 import * as UserController from './controllers/user_controller';
 import { requireAuth, requireSignin } from './services/passport';
+import * as PageSessions from './controllers/pageSession_controller';
 
 
 const router = Router();
@@ -13,6 +14,9 @@ router.get('/', (req, res) => {
 router.post('/signin', requireSignin, UserController.signin);
 
 router.post('/signup', UserController.signup);
+
+router.route('/pageSessions')
+	.post(PageSessions.createPageSession)
 
 // your routes will go here
 // router.route('/posts')

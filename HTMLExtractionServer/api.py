@@ -16,6 +16,11 @@ def content_extractor():
     if request.method == 'POST':
         # to handle the absurd CORS problems - figure out how to do JSON
         data = str(request.data, encoding='utf-8')
+        
+        # Test to see if this code runs:
+        outF = open("testOutFile.txt", "w")
+        outF.write("Inside post method")
+        outF.close()
 
         # actual content extraction
         url = data
