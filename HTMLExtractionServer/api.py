@@ -18,9 +18,9 @@ def content_extractor():
         data = str(request.data, encoding='utf-8')
         
         # Test to see if this code runs:
-        outF = open("testOutFile.txt", "w")
-        outF.write("Inside post method")
-        outF.close()
+        # outF = open("testOutFile.txt", "w")
+        # outF.write("Inside post method")
+        # outF.close()
 
         # actual content extraction
         url = data
