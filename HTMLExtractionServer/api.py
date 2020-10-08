@@ -1,8 +1,9 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 from goose3 import Goose
+import os from pml
 
-# 9/25/20
+
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
@@ -45,4 +46,6 @@ def content_extractor():
         response = jsonify(res_dict)
         return response
 
-app.run()
+    
+port = int(os.environ.get('PORT', 5000))
+app.run(host='0.0.0.0', port=port)
