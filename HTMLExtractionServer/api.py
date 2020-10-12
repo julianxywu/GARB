@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 from goose3 import Goose
-import os from pml
+import os
 
 
 
