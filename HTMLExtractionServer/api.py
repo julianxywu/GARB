@@ -3,11 +3,10 @@ from flask_cors import CORS, cross_origin
 from goose3 import Goose
 import os
 
-
-
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
-# app.config["DEBUG"] = True
+
+#app.config["DEBUG"] = True
 
 @app.route('/', methods=['GET', 'POST', 'OPTIONS'])
 @cross_origin()
@@ -17,11 +16,6 @@ def content_extractor():
     if request.method == 'POST':
         # to handle the absurd CORS problems - figure out how to do JSON
         data = str(request.data, encoding='utf-8')
-        
-        # Test to see if this code runs:
-        # outF = open("testOutFile.txt", "w")
-        # outF.write("Inside post method")
-        # outF.close()
 
         # actual content extraction
         url = data
@@ -47,5 +41,6 @@ def content_extractor():
         return response
 
     
-port = int(os.environ.get('PORT', 5000))
-app.run(host='0.0.0.0', port=port)
+if __name__ == '__main__':
+  port = int(os.environ.get('PORT', 5000))
+  app.run(host='0.0.0.0', port=port)
