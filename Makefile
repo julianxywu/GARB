@@ -1,4 +1,5 @@
 
+all: 
 
-deployhtmlserver:
+deploy:
 	git subtree push --prefix HTMLExtractionServer heroku master
