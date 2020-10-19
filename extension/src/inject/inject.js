@@ -6,6 +6,9 @@ console.log("COMINGGGGGGGGGGGGGGGG");
 alert(location.href);
 */
 
+import React from 'react';
+import { createPageSession } from '../actions'
+
 var lineQueue = new Array();
 const QUEUE_LENGTH = 10;
 const MIN_PERCENT_READ = 15;

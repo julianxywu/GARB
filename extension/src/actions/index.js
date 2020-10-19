@@ -2,7 +2,6 @@ import axios from 'axios';
 
 const ROOT_URL = 'http://localhost:9090/api';
 // const ROOT_URL = 'https://garb-user-pagesession.herokuapp.com/';
-// const API_KEY = '?key=julian_wu';
 
 // keys for actiontypes
 export const ActionTypes = {
@@ -17,64 +16,15 @@ export const ActionTypes = {
   AUTH_ERROR: 'AUTH_ERROR',
 };
 
-export function fetchPosts() {
-  // ActionCreator returns a function
-  // that gets called with dispatch
-  // remember (arg) => { } is a function
-  return (dispatch) => {
-    axios.get(`${ROOT_URL}/posts`)
-      .then((response) => {
-        // once we are done fetching we can dispatch a redux action with the response data
-        dispatch({ type: ActionTypes.FETCH_POSTS, payload: response.data });
-        // console.log(response.data);
-      })
-      .catch((error) => {
-        // whaaat?
-        // dispatch an error, use it in a separate error reducer. this is the beauty of redux.
-        // have an error component somewhere show it
-        dispatch({ type: ActionTypes.ERROR_SET, error });
-        // might you also want an ERROR_CLEAR action?
-      });
-  };
-}
-
-export function fetchPost(id) {
-  return (dispatch) => {
-    axios.get(`${ROOT_URL}/posts/${id}`)
-      .then((response) => {
-        dispatch({ type: ActionTypes.FETCH_POST, payload: response.data });
-      })
-      .catch((error) => {
-        dispatch({ type: ActionTypes.ERROR_SET, error });
-      });
-  };
-}
-
 export function createPageSession(pageSession, history) {
   const fields = {
     url: pageSession.url, title: pageSession.title, user: pageSession.user, timestampStart: pageSession.timestampStart,
     timestampEnd: pageSession.timestampEnd, sessionClosed: pageSession.sessionClosed, quadFreqs: pageSession.quadFreqs,
   };
   return (dispatch) => {
-    axios.post(`${ROOT_URL}/posts`, fields, { headers: { authorization: localStorage.getItem('token') } })
+    axios.post(`${ROOT_URL}/pageSession`, fields, { headers: { authorization: localStorage.getItem('token') } })
       .then((response) => {
-        dispatch({ type: ActionTypes.CREATE_POST, payload: response.data });
-        history.push('/');
-      })
-      .catch((error) => {
-        dispatch({ type: ActionTypes.ERROR_SET, error });
-      });
-  };
-}
-
-export function updatePost(post) {
-  const fields = {
-    title: post.title, content: post.content, coverUrl: post.coverUrl, tags: post.tags,
-  };
-  return (dispatch) => {
-    axios.put(`${ROOT_URL}/posts/${post.id}?`, fields, { headers: { authorization: localStorage.getItem('token') } })
-      .then((response) => {
-        dispatch({ type: ActionTypes.UPDATE_POST, payload: response.data });
+        dispatch({ type: ActionTypes.CREATE_PAGESESSION, payload: response.data });
       })
       .catch((error) => {
         dispatch({ type: ActionTypes.ERROR_SET, error });
