@@ -18,6 +18,12 @@ router.post('/signup', UserController.signup);
 router.route('/pageSessions')
 	.post(PageSessions.createPageSession)
 
+router.post('/', function(req, res){
+	var data = res.body;
+	console.log("RES");
+	console.log(data);
+})
+
 // your routes will go here
 // router.route('/posts')
 //   .post(requireAuth, Posts.createPost)
