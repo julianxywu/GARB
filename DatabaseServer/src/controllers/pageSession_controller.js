@@ -31,8 +31,15 @@ export const getPageSessions = (req, res) => {
 };
 
 // get a single page with its url
+ //export const getPageSession = (req, res) => {
+ //  PageSession.findOne({user: req.body.user, url: req.body.url})
+ //    .then((result) => {
+ //      res.json(result);
+ //    });
+ //};
+
  export const getPageSession = (req, res) => {
-   PageSession.findOne({user: req.body.user, url: req.body.url})
+   PageSession.findOne({user: req.params.user})
      .then((result) => {
        res.json(result);
      });
