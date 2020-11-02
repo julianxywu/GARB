@@ -24,7 +24,7 @@ router.post('/', function(req, res){
 	console.log(data);
 })
 
-router.route('/pageSessions/:user/:url')
+router.route('/pageSessions/:user/:url([^/]+/[^/]+)')
 	.get(PageSessions.getPageSession);
 
 //router.route('/pageSessions/:user')
