@@ -31,12 +31,12 @@ export const getPageSessions = (req, res) => {
 };
 
 // get a single page with its url
-// export const getPage = (req, res) => {
-//   Page.findOne({url: req.body.url})
-//     .then((result) => {
-//       res.json(result);
-//     });
-// };
+ export const getPageSession = (req, res) => {
+   PageSession.findOne({user: req.body.user, url: req.body.url})
+     .then((result) => {
+       res.json(result);
+     });
+ };
 
 export const deletePageSession = (req, res) => {
   Page.findOneAndRemove({ url: req.params.url })

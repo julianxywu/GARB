@@ -16,13 +16,16 @@ router.post('/signin', requireSignin, UserController.signin);
 router.post('/signup', UserController.signup);
 
 router.route('/pageSessions')
-	.post(PageSessions.createPageSession)
+	.post(PageSessions.createPageSession);
 
 router.post('/', function(req, res){
 	var data = res.body;
 	console.log("RES");
 	console.log(data);
 })
+
+router.route('/pageSessions/:user/:url')
+	.get(PageSessions.getPageSession);
 
 // your routes will go here
 // router.route('/posts')
