@@ -32,7 +32,8 @@ export const getPageSessions = (req, res) => {
 
 // get a single page with its url
  export const getPageSession = (req, res) => {
-   PageSession.findOne({user: req.params.user, url: req.params.url})
+   var pageUrl = decodeURIComponent(req.params.url);
+   PageSession.findOne({user: req.params.user, url: pageUrl})
      .then((result) => {
        res.json(result);
      });
