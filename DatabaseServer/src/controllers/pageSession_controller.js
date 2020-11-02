@@ -31,19 +31,19 @@ export const getPageSessions = (req, res) => {
 };
 
 // get a single page with its url
- //export const getPageSession = (req, res) => {
- //  PageSession.findOne({user: req.body.user, url: req.body.url})
- //    .then((result) => {
- //      res.json(result);
- //    });
- //};
-
  export const getPageSession = (req, res) => {
-   PageSession.findOne({user: req.params.user})
+   PageSession.findOne({user: req.params.user, url: req.params.url})
      .then((result) => {
        res.json(result);
      });
  };
+
+ //export const getPageSession = (req, res) => {
+ //  PageSession.findOne({ user: req.params.user })
+ //    .then((result) => {
+ //      res.json(result);
+ //    });
+ //};
 
 export const deletePageSession = (req, res) => {
   Page.findOneAndRemove({ url: req.params.url })
