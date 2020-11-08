@@ -25,7 +25,8 @@ router.post('/', function(req, res){
 })
 
 router.route('/pageSessions/:user/:url')
-	.get(PageSessions.getPageSession);
+	// .get(PageSessions.getPageSession)
+	.get(PageSessions.getPageSessions);
 
 //router.route('/pageSessions/:user')
 //	.get(PageSessions.getPageSession);

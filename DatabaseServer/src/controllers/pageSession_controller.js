@@ -24,7 +24,8 @@ export const createPageSession = (req, res) => {
 //  - user's username...?
 export const getPageSessions = (req, res) => {
   // const currUser = User.findOne({username: req.body.username})
-  PageSession.find({_id: { $in: req.body.id}})
+  var pageUrl = decodeURIComponent(req.params.url);
+  PageSession.find({user: req.params.user, url: pageUrl})
     .then((result) => {
       res.json(result);
     });
