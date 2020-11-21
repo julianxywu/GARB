@@ -16,43 +16,42 @@ export const signin = (req, res, next) => {
 
 // eslint-disable-next-line consistent-return
 export const signup = (req, res, next) => {
-  const { email } = req.body;
   const { password } = req.body;
   const { username } = req.body;
-  if (!email || !password || !username) {
-    return res.status(422).send('You must provide email and password');
+  if (!password || !username) {
+    return res.status(422).send('You must provide username and password');
   }
 
-  User.find({ email }, (error, result) => {
+  User.find({ username }, (error, result) => {
     if (error) {
       res.status(500).json({ error });
     }
-    if (result.length !== 0) { // Email already exists
-      res.status(422).send('Email already exists.');
+    if (result.length !== 0) { // Username already exists
+      res.status(422).send('Username already exists.');
     }
     // check for existing username
-    User.find({ username }, (error1, result1) => {
-      if (error1) {
-        res.status(500).json({ error });
-      }
-      if (result1.length !== 0) { // User already exists
-        res.status(422).send('User already exists.');
-      } else {
-        // Create a new user
-        const user = new User();
-        user.email = email;
-        user.username = username;
-        user.password = password;
-        // Save the user
-        user.save((error2) => {
-          if (error2) {
-            res.status(500).json({ error });
-          } else {
-            res.send({ token: tokenForUser(user) });
-          }
-        });
-      }
-    });
+    // User.find({ username }, (error1, result1) => {
+    //   if (error1) {
+    //     res.status(500).json({ error });
+    //   }
+    //   if (result1.length !== 0) { // User already exists
+    //     res.status(422).send('User already exists.');
+    //   } 
+    else {
+      // Create a new user
+      const user = new User();
+      // user.email = email;
+      user.username = username;
+      user.password = password;
+      // Save the user
+      user.save((error2) => {
+        if (error2) {
+          res.status(500).json({ error });
+        } else {
+          res.send({ token: tokenForUser(user)});
+        }
+      });
+    }
   });
 };
 
