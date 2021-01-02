@@ -8,7 +8,7 @@ import User from '../models/user_model';
 
 // options for local strategy, we'll use email AS the username
 // not have separate ones
-const localOptions = { usernameField: 'user' };
+const localOptions = { usernameField: 'username' };
 
 // options for jwt strategy
 // we'll pass in the jwt in an `authorization` header
@@ -21,12 +21,12 @@ const jwtOptions = {
 
 
 // username + password authentication strategy
-const localLogin = new LocalStrategy(localOptions, (user, password, done) => {
+const localLogin = new LocalStrategy(localOptions, (username, password, done) => {
   // Verify this email and password, call done with the user
   // if it is the correct email and password
   // otherwise, call done with false
   // eslint-disable-next-line consistent-return
-  User.findOne({ user }, (err, user) => {
+  User.findOne({ username }, (err, user) => {
     if (err) { return done(err); }
 
     if (!user) { return done(null, false); }
