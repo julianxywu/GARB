@@ -1,4 +1,4 @@
-/* this page is currently being injected into *all* web pages */
+/* This page is currently being injected into *all* web pages */
 
 /* comands you can run to test that the content script is running:
 console.log("COMINGGGGGGGGGGGGGGGG");
@@ -6,8 +6,6 @@ console.log("COMINGGGGGGGGGGGGGGGG");
 alert(location.href);
 */
 
-import React from 'react';
-import { createPageSession } from '../actions'
 
 var lineQueue = new Array();
 const QUEUE_LENGTH = 10;
@@ -16,6 +14,29 @@ const MIN_PERCENT_READ = 15;
 // POST request to our api to extract content
 // has to be done via background script (src/bg/background.js)
 var targetSiteURL = location.href
+// localStorage.setItem("testing", "hello");
+// console.log(localStorage);
+// console.log(localStorage.getItem("testing"));
+
+// Testing AJAX
+
+// const testData = {
+//    url: targetSiteURL,
+//    title: document.title,
+//    user: 1,
+//    timestampStart: Date.now(),
+//    timestampEnd: 10,
+//    sessionClosed: true,
+//    quadFreqs: [[10, 10, 10, 10], [11, 11, 11, 11]]
+//};
+
+// chrome.runtime.sendMessage(
+//    {contentScriptQuery: "saveToDatabase", data: testData},
+//    result => {
+//       console.log("sent ajax call");
+//      console.log(result)
+//     });
+
 chrome.runtime.sendMessage(
     {contentScriptQuery: "extractURLContent", data: targetSiteURL},
     result => {
@@ -39,7 +60,7 @@ chrome.runtime.sendMessage(
         var MAX_QUAD_NUM = 4;               // max number of quadrants in a line
 
         var currentWord = "";               // the current word that we are looking at
-        console.log("Hello");
+        //console.log("Hello");
         // iterate through every character in received content string
         for (var i = 0; i < rawContentStr.length; i++) {
             var ch = rawContentStr.charAt(i);
@@ -107,7 +128,7 @@ chrome.runtime.sendMessage(
 
                 // GENERATE CONTAINER LINE SPAN
                 // Required number of quads for curr line have been
-                // generated. Put strings representing each individual 
+                // generated. Put strings representing each individual
                 // quadrant span into a container span representing
                 // the current line. Add this span to contentHTML
 
@@ -143,336 +164,34 @@ chrome.runtime.sendMessage(
 
         $("html").html(newPage);
 
-
-        /**************************************************************
-         * 
-         *                      WEBSOCKET
-         * 
-         **************************************************************/
-
-        // for raw coordinates:
-        var data = [];    // array of [line_num, timestamp] objects
-
-        var initialHighlightingDone = false;
-
-        var quadFreqs = [];
-        console.log("Current spanNum: ");
-        console.log(spanNum);
-        for(var i = 0; i <= spanNum; i++) {
-            quadFreqs.push([0, 0, 0, 0])
-        }
-
-        //////////////////////////////////
-
-        if ("WebSocket" in window) {
-            //alert("WebSocket is supported by your Browser!");
-            
-            // Let us open a web socket
-            var ws = new WebSocket("ws://localhost:8765/hello");
-
-            ws.onopen = function() {
-                // Web Socket is connected, send data using send()
-                ws.send("Socket Opened");
-                //alert("Message is sent...");
-            };
-
-            ws.onmessage = function (evt) { 
-                var received_msg = evt.data;
-                console.log(received_msg);          // uncomment to log all coordinates // HERE
-                var tokens = received_msg.split('|');
-                if (tokens[0] === 'during') {
-
-                    ///////////////////////////////////////////////////////////
-                    // GET AND TRANSFER GAZE COORDINATES
-                    ///////////////////////////////////////////////////////////
-
-                    // get normalized gaze position
-                    // NOTE: devicePixelRatio
-                    var tobii_x = parseInt(tokens[1]);
-                    var tobii_y = parseInt(tokens[2]);
-                    var x = tobii_x + window.screenLeft + (window.devicePixelRatio * (window.outerWidth - window.innerWidth));
-                    var y = tobii_y + window.screenTop - (window.devicePixelRatio * (window.outerHeight - window.innerHeight));
+        // GETTING CURRENT USER
 
 
+        console.log(chrome.runtime);
+        // chrome.runtime.getBackgroundPage((bgPage) => {
+        //     console.log(bgPage);
+        //     user = bgPage.getUser();
+        // });
 
-                    ///////////////////////////////////////////////////////////
-                    // HIGHLIGHTING MECHANISM: line + quadrant based
-                    ///////////////////////////////////////////////////////////
+        // test user data
+        // userData = {
+        //     user: 'user2',
+        //     url: targetSiteURL
+        // };
 
-                    // https://www.w3schools.com/cssref/css_colors.asp
-                    // https://www.w3schools.com/colors/colors_picker.asp?colorhex=F0F8FF
-                    // var colorLvls = ['DarkRed', 'Red', 'DarkGreen', 'GreenYellow'];
-                    var colorLvls = ['#ffffff', '#f0f8ff', '#cce7ff', '#99cfff'];
-
-                    // INITIALISATION - DONE ONLY ONCE
-                    // at first you have to color everything the most basic color
-                    // this is only done once, afterwards you'll continue updating
-                    // each quadrant individually
-                    if (!initialHighlightingDone) {
-                        for(var i = 0; i < quadFreqs.length; i++) {
-                            for(var j = 0; j < quadFreqs[i].length; j++) {
-                                var baseColor = colorLvls[0];   // use lowest level
-                                var currSpanNum = i;
-                                var currQuadNum = j;
-                                var spanHandle = $(`#${currSpanNum}.line`);   // note `#x.y` instead of `#x .y`
-                                spanHandle.css("background-color", baseColor);
-                            }
-                        }
-                        initialHighlightingDone = true;
-                    }
-
-                    var currQuadId = '';
-                    var currLineId = '';
-
-                    // -----------------
-                    // STEP 1 
-                    // -----------------
-                    // check if gaze is on a quadrant, line, or neither
-                    el = document.elementFromPoint(x, y);
-                    // if element under pointer is one of our quads
-                    if (el != null){
-                        var isSpan = (el.nodeName.toLowerCase() == "span");
-                        var spanClassName = $(el).attr('class');
-                        if (isSpan) {
-                            if (spanClassName == "quad") {
-                                // extract and set id of our pointer
-                                currQuadId = $(el).attr('id');
-                            } else if (spanClassName == "line") {
-                                currLineId = $(el).attr('id');
-                            }
-                        }
-                    }
-                    
-
-                    // -----------------
-                    // STEP 2
-                    // -----------------
-                    // IF gaze was on a line
-                    var infoStr = '';               // will fill with info you send back to server
-
-                    // CASE 1 - gaze rested on specific quadrant (subset of line)
-                    // -----------------
-                    if (currQuadId != '') {
-                        // parse the quadrant span's ID for quad number and span number
-                        // quadNums range [0,3], whereas spans are [0,INF]
-                        // In a string XYYYY , X = quad number, Y = span number
-                        var quadNum = parseInt(currQuadId.charAt(0));
-                        var spanNum = parseInt(currQuadId.substr(1));
-
-                        // selector for span containing these quadrants
-                        var spanHandle = $(`#${spanNum}.line`);     // note `#x.y` instead of `#x .y`
-
-                        // record info on line num, quad num, and timestamp
-                        const t = (new Date()).getTime();
-                        infoStr = `${spanNum}|${quadNum}|${t}`;
-
-                        // if new line is NOT an outlier, process it. Otherwise don't
-                        if (lineIsValid(lineQueue, spanNum)) {
-                            // add to queue
-                            lineQueue.push(spanNum);       // add to end of array
-                            // and remove previous oldest from queue (after queue is of length)
-                            if (lineQueue.length > QUEUE_LENGTH) {
-                                lineQueue.shift(); // removes first element from array
-                            }
-
-                            // increment entry for relevant quadrant 
-                            // of relevant line in freq matrix
-                            quadFreqs[spanNum][quadNum] += 1;
-
-                            // use custom formula to convert frequencies for each
-                            // quadrant to a single percent read 
-                            var freqs = quadFreqs[spanNum];
-                            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
-                            var MAX = 450;
-                            percentRead = (normalisedFreq / MAX) * 100;
-
-                            // use linear gradient with given percent to highlight 
-                            // the selected span
-                            // ONLY if we've read >= 10% of line
-                            if (percentRead >= MIN_PERCENT_READ) {
-                                var backgroundCSS = `linear-gradient(.25turn, #99cfff, ${percentRead}%, #ffffff)`;
-                                spanHandle.css("background", backgroundCSS);
-                            }
-                        }
-                    
-                    // CASE 2 - gaze rested on a line, but no specific quadrant
-                    // -----------------
-                    } else if (currLineId != '') {        // Gaze not on a line
-                        // id of `line` span == line number of that span
-                        var lineNum = currLineId;
-                        // get a handle on the span corresponding to that line
-                        var spanHandle = $(`#${lineNum}.line`);     // note `#x.y` instead of `#x .y`
-
-                        // record info on line num, quad num, and timestamp
-                        const t = (new Date()).getTime();
-                        infoStr = `${lineNum}|NA|${t}`;
-
-                        lineNum = parseInt(lineNum);
-
-                        // if new line is NOT an outlier, process it. Otherwise don't
-                        if (lineIsValid(lineQueue, lineNum)) {
-                            // add to queue
-                            lineQueue.push(lineNum);       // add to end of array
-                            // and remove previous oldest from queue (after queue is of length)
-                            if (lineQueue.length > QUEUE_LENGTH) {
-                                lineQueue.shift(); // removes first element from array
-                            }
-
-                            // increment entry for quadrants of relevant line in freq matrix
-                            // custom decision on how to distribute credit by quadrants
-                            // since we don't know of specific quadrant
-                            // right now: 4/8, 2/8, 1/8, 1/8 
-                            console.log(quadFreqs);
-                            quadFreqs[lineNum][0] += 0.50;
-                            quadFreqs[lineNum][1] += 0.25;
-                            quadFreqs[lineNum][2] += 0.125;
-                            quadFreqs[lineNum][3] += 0.125;
-
-                            // use custom formulat to convert frequencies for each
-                            // quadrant to a single percent read 
-                            var freqs = quadFreqs[lineNum];
-                            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
-                            var MAX = 450;
-                            percentRead = (normalisedFreq / MAX) * 100;
-
-                            // use linear gradient with given percent to highlight 
-                            // the selected span
-                            // ONLY if we've read >= 10% of line
-                            if (percentRead >= MIN_PERCENT_READ) {
-                                var backgroundCSS = `linear-gradient(.25turn, #99cfff, ${percentRead}%, #ffffff)`;
-                                spanHandle.css("background", backgroundCSS);
-                            }
-                        }
-                    
-                    // CASE 3 -- gaze did not rest on a line at all
-                    // -----------------
-                    } else {
-                        // record that you weren't looking at a line
-                        const t = (new Date()).getTime();
-                        infoStr = `-1|-1|${t}`;                        
-                    }
-
-                    // send info on line num, quad num, and timestamp, back to server
-                    console.log(infoStr);
-                    ws.send(infoStr);
-
-
-                    ///////////////////////////////////////////////////////////
-
-
-
-                    ///////////////////////////////////////////////////////////
-                    // HIGHLIGHTING MECHANISM: only quadrant-based
-                    ///////////////////////////////////////////////////////////
-
-                    /*      // uncomment to activate
-
-                    // https://www.w3schools.com/cssref/css_colors.asp
-                    // https://www.w3schools.com/colors/colors_picker.asp?colorhex=F0F8FF
-                    var colorLvls = ['DarkRed', 'Red', 'DarkGreen', 'GreenYellow'];
-                    // var colorLvls = ['#ffffff', '#f0f8ff', '#cce7ff', '#99cfff'];
-                    var freqLvls = [5, 10, 15, 20];
-
-                    // INITIALISATION - DONE ONLY ONCE
-                    // at first you have to color everything the most basic color
-                    // this is only done once, afterwards you'll continue updating
-                    // each quadrant individually
-                    if (!initialHighlightingDone) {
-                        for(var i = 0; i < quadFreqs.length; i++) {
-                            for(var j = 0; j < quadFreqs[i].length; j++) {
-                                var currQuadFreq = quadFreqs[i][j];
-                                var lvl = 0;            // use lowest level
-                                var thisQuadColor = colorLvls[lvl];
-                                var currSpanNum = i;
-                                var currQuadNum = j;
-                                var thisQuadId = `${currQuadNum.toString()}${currSpanNum.toString()}`
-                                $(`#${thisQuadId}`).css("background-color", thisQuadColor);
-                            }
-                        }
-                        initialHighlightingDone = true;
-                    }
-
-                    var currQuadId = '';
-
-                    // STEP 1 
-                    // check if gaze is on a quadrant
-                    el = document.elementFromPoint(x, y);
-                    // if element under pointer is one of our quads
-                    if (el != null){
-                        var isSpan = (el.nodeName.toLowerCase() == "span");
-                        var isOurClass = ($(el).attr('class') == "quad");
-                        if (isSpan && isOurClass) {
-                            // extract and set id of our pointer
-                            currQuadId = $(el).attr('id');
-                        }
-                    } 
-                    
-                    // STEP 2
-                    // take action only if gaze was on a quadrant
-                    if (currQuadId != '') {
-                        // parse the quadrant span's ID for quad number and span number
-                        // quadNums range [0,3], whereas spans are [0,INF]
-                        // In a string XYYYY , X = quad number, Y = span number
-                        var quadNum = parseInt(currQuadId.charAt(0));
-                        var spanNum = parseInt(currQuadId.substr(1));
-
-                        // increment entry for relevant quadrant 
-                        // of relevant line in freq matrix
-                        quadFreqs[spanNum][quadNum] += 1;
-
-                        // find which level this new frequency corresponds to
-                        for(var k = 0; k < freqLvls.length; k++) {
-                            var currQuadFreq = quadFreqs[spanNum][quadNum];
-                            if (currQuadFreq < freqLvls[k]) {
-                                // found relevant level, color the quadrant using 
-                                // lvl as index for which color to use
-                                var thisLvlColor = colorLvls[k];
-                                $(`#${currQuadId}`).css("background-color", thisLvlColor);
-                                break;     // exit out once you've found & used correct level
-                            }
-                        }
-                    }
-
-                    */
-
-                    ///////////////////////////////////////////////////////////
-
-                }
-            };
-
-            ws.onclose = function() { 
-                // websocket is closed.
-                alert("Connection is closed..."); 
-            };
-
-            window.onbeforeunload = function(event) {
-                // Close the connection, if open.
-                if (ws.readyState === WebSocket.OPEN) {
-                    // TODO: conceptual thing - why was doc.getElembyid not giving
-                    // correct result unless you toggled?
-                    var infoToSend = {
-                    article: '1',
-                    user: '1',
-                    hlight: $("#hlighterCenter").css("visibility"),
-                    data: data
-                    };
-                    ws.send(JSON.stringify(infoToSend));
-                    
-                    //const fs = require('fs');
-                    //fs.writeFile('Output.txt', data, (err) => {
-                    //    if (err) throw err;           
-					//});
-
-                    ws.close();
+        chrome.runtime.sendMessage(
+            {contentScriptQuery: "getUser", data: null},
+            result => {
+                console.log(result);
+                var userData = {
+                    user: result,
+                    url: targetSiteURL
                 };
-            }
-        }
-        else {
-            // The browser doesn't support WebSocket
-            alert("WebSocket NOT supported by your Browser!");
-        }
-
-
+        
+                console.log("before getData");
+                getData(userData, spanNum);   
+            }); 
+        // getData(userData, spanNum);
 
         /**************************************************************
          * 
@@ -500,6 +219,499 @@ chrome.runtime.sendMessage(
         }
         */
     });
+
+/**
+ * 
+ * @param {*} quadFreqsList 
+ */
+function getData(userData, spanNum) {
+
+    var preloadData;
+
+    // Testing getting data
+    chrome.runtime.sendMessage(
+        {contentScriptQuery: "getFromDatabase", data: userData},
+        result => {
+            console.log("sent ajax getFromDatabase call");
+            console.log(result);
+            preloadData = result;
+
+            var quadFreqs = [];
+            var tempQuadFreqs = [];
+            var dbQuadFreqs = [];
+            // console.log("Current spanNum: ");
+            // console.log(spanNum);
+            for(var i = 0; i <= spanNum; i++) {
+                quadFreqs.push([0, 0, 0, 0]);
+                dbQuadFreqs.push([0, 0, 0, 0]);
+                tempQuadFreqs[i] = [];
+            }
+
+            // Preloading in user's quadfreqs data
+            if (preloadData != null) {
+                console.log("inside preloadData");
+                console.log(preloadData);
+                preloadData.forEach(function (item, index) {
+                    for (var i = 0; i < item.quadFreqs.length; i++) {
+                        tempQuadFreqs[i].push(item.quadFreqs[i]);     
+                    } 
+                });
+
+                tempQuadFreqs.forEach(function (quadFreqsList, index) {
+                    dbQuadFreqs[index] = getAverageArray(quadFreqsList);
+                });
+
+                // console.log(dbQuadFreqs);
+                // console.log(quadFreqs);
+            }
+            // console.log(quadFreqs);
+            // console.log(tempQuadFreqs);
+
+            // console.log("After finding average");
+
+            // Initialize the pageSession object
+            console.log("creating pageSessionData");
+            console.log(userData);
+            var pageSessionData = {
+                url: targetSiteURL,
+                title: document.getElementsByClassName("title")[0].innerHTML,
+                user: userData.user,
+                timestampStart: Date.now(),
+                timestampEnd: null,
+                sessionClosed: false,
+                quadFreqs: null
+            };
+
+            //////////////////////////////////
+
+            runWebSocket(quadFreqs, dbQuadFreqs);
+
+        // BEFORE UNLOAD NOT WORKING
+        // window.addEventListener("beforeunload", function(event) {
+
+        //     console.log("before unload");
+        //     pageSessionData.timestampEnd = Date.now();
+        //     pageSessionData.quadFreqs = quadFreqs;
+        //     pageSessionData.sessionClosed = true;
+        //     console.log(pageSessionData);
+
+        //     // event.preventDefault();
+        //     event.returnValue = "Are you sure?";
+        //     // return null;
+        // });
+
+        window.addEventListener("unload", function(event) {
+            // Send message to background.js to save the pageSessionData to the database
+            pageSessionData.timestampEnd = Date.now();
+            pageSessionData.quadFreqs = quadFreqs;
+            pageSessionData.sessionClosed = true;
+            console.log(pageSessionData);
+            chrome.runtime.sendMessage(
+                {contentScriptQuery: "saveToDatabase", data: pageSessionData},
+                result => {
+                    console.log("sent ajax call");
+                    console.log(result);
+            });
+        });
+    });
+}
+
+/**************************************************************
+* 
+*                      WEBSOCKET
+* 
+**************************************************************/
+
+function runWebSocket(quadFreqs, dbQuadFreqs) {
+
+    // for raw coordinates:
+    var data = [];    // array of [line_num, timestamp] objects
+
+    var initialHighlightingDone = false;
+
+    if ("WebSocket" in window) {
+        //alert("WebSocket is supported by your Browser!");
+        
+        // Let us open a web socket
+        var ws = new WebSocket("ws://localhost:8765/hello");
+
+        ws.onopen = function() {
+            // Web Socket is connected, send data using send()
+            ws.send("Socket Opened");
+            //alert("Message is sent...");
+        };
+
+        ws.onmessage = function (evt) { 
+            var received_msg = evt.data;
+            //console.log(received_msg);          // uncomment to log all coordinates // HERE
+            var tokens = received_msg.split('|');
+            if (tokens[0] === 'during') {
+
+                ///////////////////////////////////////////////////////////
+                // GET AND TRANSFER GAZE COORDINATES
+                ///////////////////////////////////////////////////////////
+
+                // get normalized gaze position
+                // NOTE: devicePixelRatio
+                var tobii_x = parseInt(tokens[1]);
+                var tobii_y = parseInt(tokens[2]);
+                var x = tobii_x + window.screenLeft + (window.devicePixelRatio * (window.outerWidth - window.innerWidth));
+                var y = tobii_y + window.screenTop - (window.devicePixelRatio * (window.outerHeight - window.innerHeight));
+
+
+
+                ///////////////////////////////////////////////////////////
+                // HIGHLIGHTING MECHANISM: line + quadrant based
+                ///////////////////////////////////////////////////////////
+
+                // https://www.w3schools.com/cssref/css_colors.asp
+                // https://www.w3schools.com/colors/colors_picker.asp?colorhex=F0F8FF
+                // var colorLvls = ['DarkRed', 'Red', 'DarkGreen', 'GreenYellow'];
+                // [White, Light Blue, Light Orange, Light Violet]
+                var colorLvls = ['#ffffff', '#99cfff', '#ffcc66', '#ffccff'];
+
+
+                // INITIALISATION - DONE ONLY ONCE
+                // at first you have to color everything the most basic color
+                // this is only done once, afterwards you'll continue updating
+                // each quadrant individually
+                if (!initialHighlightingDone) {
+                    for(var i = 0; i < quadFreqs.length; i++) {
+                        // for(var j = 0; j < quadFreqs[i].length; j++) {
+                            var baseColor = colorLvls[0];   // use lowest level
+                            var currSpanNum = i;
+                            // var currQuadNum = j;
+                            var spanHandle = $(`#${currSpanNum}.line`);   // note `#x.y` instead of `#x .y`
+                            spanHandle.css("background-color", baseColor);
+
+                            // Highlight lines that have already been read
+                            var freqs = dbQuadFreqs[i];
+                            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+                            var MAX = 450;
+                            percentRead = (normalisedFreq / MAX) * 100;
+
+                            // use linear gradient with given percent to highlight 
+                            // the selected span
+                            // ONLY if we've read >= 10% of line
+                            if (percentRead >= MIN_PERCENT_READ) {
+                                var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[2]}, ${percentRead}%, ${colorLvls[0]})`;
+                                spanHandle.css("background", backgroundCSS);
+                                dbQuadFreqs[i].push(percentRead);
+                            }
+                            else {
+                                dbQuadFreqs[i].push(0);
+                            }
+                        // }
+                    }
+                    initialHighlightingDone = true;
+                }
+
+                // console.log(dbQuadFreqs);
+                // console.log(quadFreqs);
+
+                var currQuadId = '';
+                var currLineId = '';
+
+                // -----------------
+                // STEP 1 
+                // -----------------
+                // check if gaze is on a quadrant, line, or neither
+                el = document.elementFromPoint(x, y);
+                // if element under pointer is one of our quads
+                if (el != null){
+                    var isSpan = (el.nodeName.toLowerCase() == "span");
+                    var spanClassName = $(el).attr('class');
+                    if (isSpan) {
+                        if (spanClassName == "quad") {
+                            // extract and set id of our pointer
+                            currQuadId = $(el).attr('id');
+                        } else if (spanClassName == "line") {
+                            currLineId = $(el).attr('id');
+                        }
+                    }
+                }
+                
+
+                // -----------------
+                // STEP 2
+                // -----------------
+                // IF gaze was on a line
+                var infoStr = '';               // will fill with info you send back to server
+
+                // CASE 1 - gaze rested on specific quadrant (subset of line)
+                // -----------------
+                if (currQuadId != '') {
+                    // parse the quadrant span's ID for quad number and span number
+                    // quadNums range [0,3], whereas spans are [0,INF]
+                    // In a string XYYYY , X = quad number, Y = span number
+                    var quadNum = parseInt(currQuadId.charAt(0));
+                    var spanNum = parseInt(currQuadId.substr(1));
+
+                    // selector for span containing these quadrants
+                    var spanHandle = $(`#${spanNum}.line`);     // note `#x.y` instead of `#x .y`
+
+                    // record info on line num, quad num, and timestamp
+                    const t = (new Date()).getTime();
+                    infoStr = `${spanNum}|${quadNum}|${t}`;
+
+                    // if new line is NOT an outlier, process it. Otherwise don't
+                    if (lineIsValid(lineQueue, spanNum)) {
+                        // add to queue
+                        lineQueue.push(spanNum);       // add to end of array
+                        // and remove previous oldest from queue (after queue is of length)
+                        if (lineQueue.length > QUEUE_LENGTH) {
+                            lineQueue.shift(); // removes first element from array
+                        }
+
+                        // increment entry for relevant quadrant 
+                        // of relevant line in freq matrix
+                        quadFreqs[spanNum][quadNum] += 1;
+
+                        // use custom formula to convert frequencies for each
+                        // quadrant to a single percent read 
+                        var freqs = quadFreqs[spanNum];
+                        var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+                        var MAX = 450;
+                        percentRead = (normalisedFreq / MAX) * 100;
+                        
+                        // use linear gradient with given percent to highlight 
+                        // the selected span
+                        // ONLY if we've read >= 10% of line
+                        if (percentRead >= MIN_PERCENT_READ) {
+                            var dbPercentRead = Math.min(dbQuadFreqs[spanNum][4], 100);
+                            if (percentRead > dbPercentRead) {
+                                var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${dbPercentRead}%, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                                spanHandle.css("background", backgroundCSS);
+                            }
+                            else if (percentRead <= dbPercentRead) {
+                                var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]}, ${dbPercentRead}%, ${colorLvls[0]})`;
+                                spanHandle.css("background", backgroundCSS);
+                            }
+                        }
+                    }
+                
+                // CASE 2 - gaze rested on a line, but no specific quadrant
+                // -----------------
+                } else if (currLineId != '') {        // Gaze not on a line
+                    // id of `line` span == line number of that span
+                    var lineNum = currLineId;
+                    // get a handle on the span corresponding to that line
+                    var spanHandle = $(`#${lineNum}.line`);     // note `#x.y` instead of `#x .y`
+
+                    // record info on line num, quad num, and timestamp
+                    const t = (new Date()).getTime();
+                    infoStr = `${lineNum}|NA|${t}`;
+
+                    lineNum = parseInt(lineNum);
+
+                    // if new line is NOT an outlier, process it. Otherwise don't
+                    if (lineIsValid(lineQueue, lineNum)) {
+                        // add to queue
+                        lineQueue.push(lineNum);       // add to end of array
+                        // and remove previous oldest from queue (after queue is of length)
+                        if (lineQueue.length > QUEUE_LENGTH) {
+                            lineQueue.shift(); // removes first element from array
+                        }
+
+                        // increment entry for quadrants of relevant line in freq matrix
+                        // custom decision on how to distribute credit by quadrants
+                        // since we don't know of specific quadrant
+                        // right now: 4/8, 2/8, 1/8, 1/8 
+                        
+                        // console.log(quadFreqs);
+                        quadFreqs[lineNum][0] += 0.50;
+                        quadFreqs[lineNum][1] += 0.25;
+                        quadFreqs[lineNum][2] += 0.125;
+                        quadFreqs[lineNum][3] += 0.125;
+
+                        // use custom formulat to convert frequencies for each
+                        // quadrant to a single percent read 
+                        var freqs = quadFreqs[lineNum];
+                        var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+                        var MAX = 450;
+                        percentRead = (normalisedFreq / MAX) * 100;
+
+                        // use linear gradient with given percent to highlight 
+                        // the selected span
+                        // ONLY if we've read >= 10% of line
+                        if (percentRead >= MIN_PERCENT_READ) {
+                            if (dbQuadFreqs[lineNum][4] == 0) {
+                                var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                                spanHandle.css("background", backgroundCSS);
+                            }
+                            else if (dbQuadFreqs[lineNum][4] == 1) {
+                                var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]})`;
+                                spanHandle.css("background", backgroundCSS);
+                            }
+                        }
+                    }
+                
+                // CASE 3 -- gaze did not rest on a line at all
+                // -----------------
+                } else {
+                    // record that you weren't looking at a line
+                    const t = (new Date()).getTime();
+                    infoStr = `-1|-1|${t}`;                        
+                }
+
+                // send info on line num, quad num, and timestamp, back to server
+                // console.log(infoStr);
+                ws.send(infoStr);
+
+
+                ///////////////////////////////////////////////////////////
+
+
+
+                ///////////////////////////////////////////////////////////
+                // HIGHLIGHTING MECHANISM: only quadrant-based
+                ///////////////////////////////////////////////////////////
+
+                /*      // uncomment to activate
+
+                // https://www.w3schools.com/cssref/css_colors.asp
+                // https://www.w3schools.com/colors/colors_picker.asp?colorhex=F0F8FF
+                var colorLvls = ['DarkRed', 'Red', 'DarkGreen', 'GreenYellow'];
+                // var colorLvls = ['#ffffff', '#f0f8ff', '#cce7ff', '#99cfff'];
+                var freqLvls = [5, 10, 15, 20];
+
+                // INITIALISATION - DONE ONLY ONCE
+                // at first you have to color everything the most basic color
+                // this is only done once, afterwards you'll continue updating
+                // each quadrant individually
+                if (!initialHighlightingDone) {
+                    for(var i = 0; i < quadFreqs.length; i++) {
+                        for(var j = 0; j < quadFreqs[i].length; j++) {
+                            var currQuadFreq = quadFreqs[i][j];
+                            var lvl = 0;            // use lowest level
+                            var thisQuadColor = colorLvls[lvl];
+                            var currSpanNum = i;
+                            var currQuadNum = j;
+                            var thisQuadId = `${currQuadNum.toString()}${currSpanNum.toString()}`
+                            $(`#${thisQuadId}`).css("background-color", thisQuadColor);
+                        }
+                    }
+                    initialHighlightingDone = true;
+                }
+
+                var currQuadId = '';
+
+                // STEP 1 
+                // check if gaze is on a quadrant
+                el = document.elementFromPoint(x, y);
+                // if element under pointer is one of our quads
+                if (el != null){
+                    var isSpan = (el.nodeName.toLowerCase() == "span");
+                    var isOurClass = ($(el).attr('class') == "quad");
+                    if (isSpan && isOurClass) {
+                        // extract and set id of our pointer
+                        currQuadId = $(el).attr('id');
+                    }
+                } 
+                
+                // STEP 2
+                // take action only if gaze was on a quadrant
+                if (currQuadId != '') {
+                    // parse the quadrant span's ID for quad number and span number
+                    // quadNums range [0,3], whereas spans are [0,INF]
+                    // In a string XYYYY , X = quad number, Y = span number
+                    var quadNum = parseInt(currQuadId.charAt(0));
+                    var spanNum = parseInt(currQuadId.substr(1));
+
+                    // increment entry for relevant quadrant 
+                    // of relevant line in freq matrix
+                    quadFreqs[spanNum][quadNum] += 1;
+
+                    // find which level this new frequency corresponds to
+                    for(var k = 0; k < freqLvls.length; k++) {
+                        var currQuadFreq = quadFreqs[spanNum][quadNum];
+                        if (currQuadFreq < freqLvls[k]) {
+                            // found relevant level, color the quadrant using 
+                            // lvl as index for which color to use
+                            var thisLvlColor = colorLvls[k];
+                            $(`#${currQuadId}`).css("background-color", thisLvlColor);
+                            break;     // exit out once you've found & used correct level
+                        }
+                    }
+                }
+
+                */
+
+                ///////////////////////////////////////////////////////////
+
+            }
+        };
+
+        ws.onclose = function() { 
+            // websocket is closed.
+            alert("Connection is closed..."); 
+        };
+        
+        window.onbeforeunload = function(event) {
+            
+            // Close the connection, if open.
+            if (ws.readyState === WebSocket.OPEN) {
+                // TODO: conceptual thing - why was doc.getElembyid not giving
+                // correct result unless you toggled?
+
+                // var infoToSend = {
+                // article: '1',
+                // user: '1',
+                // hlight: $("#hlighterCenter").css("visibility"),
+                // data: data
+                // };
+                // ws.send(JSON.stringify(infoToSend));
+                
+                //const fs = require('fs');
+                //fs.writeFile('Output.txt', data, (err) => {
+                //    if (err) throw err;           
+                //});
+
+                // Close the connection
+                ws.close();
+            };
+        }
+    }
+    else {
+        // The browser doesn't support WebSocket
+        alert("WebSocket NOT supported by your Browser!");
+    }
+}
+
+/**
+ * Function that takes in a list of all the previous quadFreqs at one particular line
+ * and returns one quadFreq with all the max values
+ * @param {list} quadFreqsList 
+ */
+function getAverageArray(quadFreqsList) {
+    var avg = [0, 0, 0, 0];
+    var counter = 0;
+    quadFreqsList.forEach(function (item, index) {
+        for (var i = 0; i < 4; i++) {
+            avg[i] += item[i];
+        }
+        counter += 1;
+    });
+    for (var i = 0; i < 4; i++) {
+        avg[i] = avg[i] / counter;
+    }
+    return avg;
+}
+
+/**
+ * Function that takes in a list of all the previous quadFreqs at one particular line
+ * and returns one quadFreq with all the max values
+ * @param {list} quadFreqsList 
+ */
+function getMaxArray(quadFreqsList) {
+    var finalArray = [0, 0, 0, 0];
+    quadFreqsList.forEach(function (item, index) {
+        for (var i = 0; i < 4; i++) {
+            finalArray[i] = Math.max(finalArray[i], item[i]);
+        }
+    });
+    return finalArray;
+}
 
 /**
  * 

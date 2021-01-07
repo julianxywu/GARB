@@ -1,13 +1,11 @@
 {
   "ExpandedNodes": [
     "",
-    "\\extension\\js",
-    "\\extension\\src",
-    "\\extension\\src\\actions",
-    "\\extension\\src\\bg",
-    "\\extension\\src\\inject",
+    "\\DatabaseServer",
+    "\\DatabaseServer\\src",
+    "\\DatabaseServer\\src\\services",
     "\\HTMLExtractionServer"
   ],
-  "SelectedNode": "\\HTMLExtractionServer\\api.py",
+  "SelectedNode": "\\DatabaseServer\\src",
   "PreviewInSolutionExplorer": false
 }
