@@ -4,7 +4,7 @@ import mongoose, { Schema } from 'mongoose';
 const PageSchema = new Schema({
   url: String,
   title: String,
-  user: Number,
+  user: String,
   timestampStart: Date,
   timestampEnd: Date,
   sessionClosed: Boolean,
