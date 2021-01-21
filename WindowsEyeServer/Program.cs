@@ -32,18 +32,55 @@ namespace Interaction_Interactors_101
         {
             FixationDataStream fixationDataStream;
             Host host;
+            double fixationBeginTime;
 
 
             protected override void OnMessage(MessageEventArgs e)
             {
                 //string path = @"/Users/Kathryn Faolin/Documents/thesis/data.txt";
-                string path = @"/Users/julianxywu/Documents/data.txt";
-                System.IO.File.AppendAllText(path, e.Data + Environment.NewLine);
+                ////string path = @"/Users/tim/Documents/data.txt";
+                ////System.IO.File.AppendAllText(path, e.Data + Environment.NewLine);
                 //if (e.Data == "pandas")
                 //{
                 //    System.IO.File.WriteAllText(path, e.Data);
                 //}
                 //Send(e.Data);
+            }
+
+            private void handleFixation(object sender, StreamData<FixationData> fixation)
+            {
+                // On the Next event, data comes as FixationData objects, wrapped in a StreamData<T> object.
+                var fixationPointX = fixation.Data.X;
+                var fixationPointY = fixation.Data.Y;
+
+                switch (fixation.Data.EventType)
+                {
+                    case FixationDataEventType.Begin:
+                        fixationBeginTime = fixation.Data.Timestamp;
+                        string beginString = string.Format("begin|{0}|{1}", fixationPointX, fixationPointY);
+                        Send(beginString);
+                        Console.WriteLine(beginString);
+                        break;
+
+                    case FixationDataEventType.Data:
+                        string duringString = string.Format("during|{0}|{1}", fixationPointX, fixationPointY);
+                        Send(duringString);
+                        break;
+
+                    case FixationDataEventType.End:
+                        string endString = string.Format("end|{0}|{1}", fixationPointX, fixationPointY);
+                        Send(endString);
+                        string fixString = string.Format("duration|{0}|null",
+                            fixationBeginTime > 0
+                                ? TimeSpan.FromMilliseconds(fixation.Data.Timestamp - fixationBeginTime)
+                                : TimeSpan.Zero);
+                        Send(fixString);
+                        break;
+
+                    default:
+                        throw new InvalidOperationException("Unknown fixation event type, which doesn't have explicit handling.");
+                }
+
             }
 
             protected override void OnOpen()
@@ -58,49 +95,18 @@ namespace Interaction_Interactors_101
 
                 // Because timestamp of fixation events is relative to the previous ones
                 // only, we will store them in this variable.
-                var fixationBeginTime = 0d;
+                fixationBeginTime = 0d;
                 
-                Console.WriteLine(fixationBeginTime);
-                fixationDataStream.Next += (o, fixation) =>
-                {
-                    // On the Next event, data comes as FixationData objects, wrapped in a StreamData<T> object.
-                    var fixationPointX = fixation.Data.X;
-                    var fixationPointY = fixation.Data.Y;
-
-                    switch (fixation.Data.EventType)
-                    {
-                        case FixationDataEventType.Begin:
-                            fixationBeginTime = fixation.Data.Timestamp;
-                            string beginString = string.Format("begin|{0}|{1}", fixationPointX, fixationPointY);
-                            Send(beginString);
-                            break;
-
-                        case FixationDataEventType.Data:
-                            string duringString = string.Format("during|{0}|{1}", fixationPointX, fixationPointY);
-                            Send(duringString);
-                            break;
-
-                        case FixationDataEventType.End:
-                            string endString = string.Format("end|{0}|{1}", fixationPointX, fixationPointY);
-                            Send(endString);
-                            string fixString = string.Format("duration|{0}|null",
-                                fixationBeginTime > 0
-                                    ? TimeSpan.FromMilliseconds(fixation.Data.Timestamp - fixationBeginTime)
-                                    : TimeSpan.Zero);
-                            Send(fixString);
-                            break;
-
-                        default:
-                            throw new InvalidOperationException("Unknown fixation event type, which doesn't have explicit handling.");
-                    }
-                };
+                Console.WriteLine(string.Format("stream opened at {0}", DateTime.Now));
+                fixationDataStream.Next += handleFixation;
 
             }
 
             protected override void OnClose(CloseEventArgs e)
             {
                 base.OnClose(e);
-                fixationDataStream.Next -= null;
+                Console.WriteLine(string.Format("stream closed at {0}", DateTime.Now));
+                fixationDataStream.Next -= handleFixation;
             }
         }
 
