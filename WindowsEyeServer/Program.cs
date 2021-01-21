@@ -59,7 +59,7 @@ namespace Interaction_Interactors_101
                         fixationBeginTime = fixation.Data.Timestamp;
                         string beginString = string.Format("begin|{0}|{1}", fixationPointX, fixationPointY);
                         Send(beginString);
-                        Console.WriteLine(beginString);
+                        //Console.WriteLine(beginString);
                         break;
 
                     case FixationDataEventType.Data:
