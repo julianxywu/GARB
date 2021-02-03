@@ -11,9 +11,12 @@
 
 let authenticated = false;
 let authUser = 'testUser';
+let authCode = 0;
 
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
+
+      // Request to scrape the webpage and return the text data
       if (request.contentScriptQuery == "extractURLContent") {
         //var url = "https://mysterious-fortress-86319.herokuapp.com/";
         var url = "https://garb-eyetracking.herokuapp.com/";
@@ -23,7 +26,6 @@ chrome.runtime.onMessage.addListener(
             credentials: "same-origin", // include, *same-origin, omit
             headers: {
                 "Content-Type": "text/plain",
-                // "Content-Type": "application/x-www-form-urlencoded",
             },
             redirect: "follow", // manual, *follow, error
             referrer: "no-referrer", // no-referrer, *client
@@ -36,8 +38,10 @@ chrome.runtime.onMessage.addListener(
         .catch(error => console.log(error))
         return true;  // Will respond asynchronously.
       }
+
+      // Request to save the current pagesession data to the database
       else if (request.contentScriptQuery == "saveToDatabase") {
-        alert("inside savetodatabase")
+        // alert("inside savetodatabase")
         var url = "https://garb-user-pagesession.herokuapp.com/pageSessions";
         
         //const testData = {
@@ -56,7 +60,6 @@ chrome.runtime.onMessage.addListener(
             credentials: "same-origin", // include, *same-origin, omit
             headers: {
                 "Content-Type": "application/json",
-                // "Content-Type": "application/x-www-form-urlencoded",
             },
             redirect: "follow", // manual, *follow, error
             referrer: "no-referrer", // no-referrer, *client
@@ -69,45 +72,16 @@ chrome.runtime.onMessage.addListener(
         .catch(error => console.log(error))
         return true;  // Will respond asynchronously.
         
-        
-        // Testing AJAX calls 1
-        // console.log("inside request to save");
-        // var testData = {
-        //   url: 'testURL',
-        //   title: 'title',
-        //   user: 'user',
-        //   timestampStart: 0,
-        //   timestampEnd: 10,
-        //   sessionClose: true,
-        //   quadFreqs: [[10, 10, 10, 10], [11, 11, 11, 11]]
-        // }
-        
-        // const ROOT_URL = 'https://garb-user-pagesession.herokuapp.com/'
-
-        // $.ajax({
-        //   url: ROOT_URL,
-        //   type: "POST",
-        //   data: testData,
-        //   contentType: "application/json",
-        //   success: function(data) {
-        //       console.log('success --> data :', data);  
-			  //   },
-        //   error: function(xhr, text, err) {
-        //       console.log('error: ', err);
-        //       console.log('text: ', text);
-        //       console.log('xhr: ', xhr);
-        //       console.log("there is a problem with the request!")
-        //   }
-		    // });
-	    }
+      
+      }
+      
+      // Request to get a pagesession object from the database
       else if (request.contentScriptQuery == "getFromDatabase") {
-        // alert("inside getfromdatabase");
 
         // Get the user and url
         var user = request.data.user;
         var pageUrl = encodeURIComponent(request.data.url);
         var url = `https://garb-user-pagesession.herokuapp.com/pageSessions/${user}/${pageUrl}`;
-        // var url = `https://garb-user-pagesession.herokuapp.com/pageSessions/${user}`;
         alert(url);
 
         fetch(url, {
@@ -122,21 +96,18 @@ chrome.runtime.onMessage.addListener(
             referrer: "no-referrer", // no-referrer, *client
             // body: JSON.stringify(request.data), // body data type must match "Content-Type" header
         })
-        // fetch(url)
         .then((resp) => resp.json()) // Transform the data into json
         .then(function(data) {
           sendResponse(data);
         })
-        // .then(function(data) {
-        //     sendResponse("hello");
-        //     return ("hello");
-        //   })
         .catch(error => {
           console.log(error);
           sendResponse(null);
         });
         return true;  // Will respond asynchronously.
       }
+
+      // Request to get the current user object
       else if (request.contentScriptQuery == "getUser") {
         sendResponse(authUser);
         return true;
@@ -144,11 +115,32 @@ chrome.runtime.onMessage.addListener(
     }
 );
 
+function sendMode(i) {
+  chrome.runtime.sendMessage(
+    {contentScriptQuery: "getMode", data: i},
+    result => {
+      console.log("successfully sent message to inject.js");
+    }
+  );
+
+  var event = new CustomEvent("getMode", {
+    body: {
+      mode: i
+    }
+  });
+
+  window.dispatchEvent(event);
+}
+
 // AUTHENTICATION
 
 // Getter method for authentication
 function getAuth() {
   return authenticated;
+}
+
+function getAuthCode() {
+  return authCode;
 }
 
 function getUser() {
@@ -176,11 +168,13 @@ async function signup(username, password) {
   })
   .then((resp) => {
     authenticated = resp.ok;
+    authCode = resp.status;
     authUser = username;
-    // document.getElementById("mainPopup").style.backgroundColor = 'green';
   })
-  .catch(error => console.log(error));
-    // document.getElementById("formLogin").style.display = "none";
+  .catch(error => {
+    console.log(error);
+    authCode = 401;
+  });
   return authenticated;  // Will respond asynchronously.
 }
 
@@ -205,9 +199,13 @@ async function signin(username, password) {
   })
   .then((resp) => {
     authenticated = resp.ok;
+    authCode = resp.status;
     authUser = username;
   })
-  .catch(error => console.log(error));
+  .catch((error) => {
+    console.log(error);
+    authCode = 401;
+  });
   return authenticated;  // Will respond asynchronously.
 }
 

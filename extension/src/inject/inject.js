@@ -329,6 +329,24 @@ function runWebSocket(quadFreqs, dbQuadFreqs) {
 
     var initialHighlightingDone = false;
 
+    console.log("right before adding listeners");
+    chrome.runtime.onMessage.addListener(
+        function(request, sender, sendResponse) {
+            if (request.contentScriptQuery == 'getMode') {
+                console.log("WITH CHROME RUNTIME");
+                console.log(request);
+                console.log(request.data);
+            }
+        }
+    );
+    
+    // Testing with window
+    window.addEventListener("getMode", function(event) {
+        console.log("WITH WINDOW");
+        console.log(event);
+    });
+    console.log(window);
+
     if ("WebSocket" in window) {
         //alert("WebSocket is supported by your Browser!");
         
@@ -369,7 +387,10 @@ function runWebSocket(quadFreqs, dbQuadFreqs) {
                 // var colorLvls = ['DarkRed', 'Red', 'DarkGreen', 'GreenYellow'];
                 // [White, Light Blue, Light Orange, Light Violet]
                 var colorLvls = ['#ffffff', '#99cfff', '#ffcc66', '#ffccff'];
+                var greyLvls = ['#ffffff', '#858585']
+                
 
+                // console.log("Right before adding listeners");
 
                 // INITIALISATION - DONE ONLY ONCE
                 // at first you have to color everything the most basic color
@@ -382,7 +403,7 @@ function runWebSocket(quadFreqs, dbQuadFreqs) {
                             var currSpanNum = i;
                             // var currQuadNum = j;
                             var spanHandle = $(`#${currSpanNum}.line`);   // note `#x.y` instead of `#x .y`
-                            spanHandle.css("background-color", baseColor);
+                            spanHandle.css("background-color", baseColor); // set the background to white for every line
 
                             // Highlight lines that have already been read
                             var freqs = dbQuadFreqs[i];
