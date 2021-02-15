@@ -88,6 +88,7 @@ namespace Interaction_Interactors_101
                                     ? TimeSpan.FromMilliseconds(fixation.Data.Timestamp - fixationBeginTime)
                                     : TimeSpan.Zero);
                             Send(fixString);
+                            Send("Finished!!");
                             break;
 
                         default:

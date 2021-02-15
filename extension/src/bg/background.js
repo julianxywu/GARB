@@ -12,6 +12,7 @@
 let authenticated = false;
 let authUser = 'testUser';
 let authCode = 0;
+let contentScriptTabId = 0;
 
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
@@ -111,25 +112,44 @@ chrome.runtime.onMessage.addListener(
       else if (request.contentScriptQuery == "getUser") {
         sendResponse(authUser);
         return true;
-      };
+      }
+
+      // Request to get the content script's tab ID
+      else if (request.contentScriptQuery == "sendTabId") {
+        console.log("Sender's tab id is: ", sender.tab.id);
+        contentScriptTabId = sender.tab.id;
+        sendResponse("From background.js: Got your tabId!");
+        return true;
+      }
     }
 );
 
 function sendMode(i) {
-  chrome.runtime.sendMessage(
-    {contentScriptQuery: "getMode", data: i},
-    result => {
-      console.log("successfully sent message to inject.js");
-    }
-  );
+  console.log("trying to send to inject.js");
+  
+  // chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    chrome.tabs.sendMessage(contentScriptTabId, {switchMode: i});
+    console.log("after chrome.tabs.sendMessage");
+  // });
+  // chrome.runtime.sendMessage(
+  //   {contentScriptQuery: "getMode", data: i},
+  //   result => {
+  //     console.log("successfully sent message to inject.js");
+  //     chrome.tabs.getSelected(null, function(tabs) {
+  //       console.log(tabs.id);
+  //     console.log(chrome.tabs);
+  //     console.log(chrome.extension);
+  //   }); 
+  //   }
 
-  var event = new CustomEvent("getMode", {
-    body: {
-      mode: i
-    }
-  });
 
-  window.dispatchEvent(event);
+  // var event = new CustomEvent("getMode", {
+  //   body: {
+  //     mode: i
+  //   }
+  // });
+
+  // window.dispatchEvent(event);
 }
 
 // AUTHENTICATION
