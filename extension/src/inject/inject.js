@@ -14,28 +14,32 @@ const MIN_PERCENT_READ = 15;
 // POST request to our api to extract content
 // has to be done via background script (src/bg/background.js)
 var targetSiteURL = location.href
-// localStorage.setItem("testing", "hello");
-// console.log(localStorage);
-// console.log(localStorage.getItem("testing"));
+let viewMode = 1;
+var initialHighlightingDone = false;    
 
-// Testing AJAX
+console.log("right before adding listeners");
 
-// const testData = {
-//    url: targetSiteURL,
-//    title: document.title,
-//    user: 1,
-//    timestampStart: Date.now(),
-//    timestampEnd: 10,
-//    sessionClosed: true,
-//    quadFreqs: [[10, 10, 10, 10], [11, 11, 11, 11]]
-//};
+// Sending an empty message to background.js so that background.js has the tab id
+chrome.runtime.sendMessage(
+    {contentScriptQuery: "sendTabId", data: null},
+    result => {
+        console.log("Making sure background.js has my tab Id!");
+        console.log(result);
+    });
 
-// chrome.runtime.sendMessage(
-//    {contentScriptQuery: "saveToDatabase", data: testData},
-//    result => {
-//       console.log("sent ajax call");
-//      console.log(result)
-//     });
+// Listener for when user changes the view mode
+chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
+    if (request.switchMode) {
+        console.log("received message! finally!");
+        console.log("The response is: " + request.switchMode);
+        if (viewMode != request.switchMode) {
+            viewMode = request.switchMode;
+            console.log("viewMode now is: " + viewMode);
+            initialHighlightingDone = false;
+        }
+    }
+    
+});
 
 chrome.runtime.sendMessage(
     {contentScriptQuery: "extractURLContent", data: targetSiteURL},
@@ -60,11 +64,11 @@ chrome.runtime.sendMessage(
         var MAX_QUAD_NUM = 4;               // max number of quadrants in a line
 
         var currentWord = "";               // the current word that we are looking at
-        //console.log("Hello");
         // iterate through every character in received content string
         for (var i = 0; i < rawContentStr.length; i++) {
             var ch = rawContentStr.charAt(i);
 
+            // console.log(quadContent);
             // ALT CASE - seen a newline, hence new paragraph
             // double check since we get \n chars back to back
             if ((ch == "\n") && (quadContent != "")) {
@@ -74,6 +78,17 @@ chrome.runtime.sendMessage(
                 currLineSpans.push(quadSpan);
                 // 2 - generate container line span, add to overall contentHTML string
                 contentHTML += `<span class="line" id="${spanNum}">${currLineSpans.join('')}</span>`;
+                // 3 = edge case where there is only one word on the next line that has not been accounted for yet
+                if (currentWord != "") {
+                    quadNum = 0;
+                    spanNum++;
+                    currLineSpans = [];
+                    quadSpan = `<span class="quad" id="${quadNum}${spanNum}">${currentWord}</span>`;
+                    currLineSpans.push(quadSpan);
+                    contentHTML += `<span class="line" id="${spanNum}">${currLineSpans.join('')}</span>`;
+                    currentWord = "";
+                } 
+
                 // then insert line break
                 contentHTML += "<br><br>";
                 // now reinitialize everything
@@ -236,9 +251,9 @@ function getData(userData, spanNum) {
             console.log(result);
             preloadData = result;
 
-            var quadFreqs = [];
+            var quadFreqs = []; // the current sessions' quadFreqs that we will be updating as the user reads
             var tempQuadFreqs = [];
-            var dbQuadFreqs = [];
+            var dbQuadFreqs = []; // the db's quadFreqs that we will initialize our session with
             // console.log("Current spanNum: ");
             // console.log(spanNum);
             for(var i = 0; i <= spanNum; i++) {
@@ -260,14 +275,7 @@ function getData(userData, spanNum) {
                 tempQuadFreqs.forEach(function (quadFreqsList, index) {
                     dbQuadFreqs[index] = getAverageArray(quadFreqsList);
                 });
-
-                // console.log(dbQuadFreqs);
-                // console.log(quadFreqs);
             }
-            // console.log(quadFreqs);
-            // console.log(tempQuadFreqs);
-
-            // console.log("After finding average");
 
             // Initialize the pageSession object
             console.log("creating pageSessionData");
@@ -327,8 +335,6 @@ function runWebSocket(quadFreqs, dbQuadFreqs) {
     // for raw coordinates:
     var data = [];    // array of [line_num, timestamp] objects
 
-    var initialHighlightingDone = false;
-
     if ("WebSocket" in window) {
         //alert("WebSocket is supported by your Browser!");
         
@@ -343,7 +349,7 @@ function runWebSocket(quadFreqs, dbQuadFreqs) {
 
         ws.onmessage = function (evt) { 
             var received_msg = evt.data;
-            //console.log(received_msg);          // uncomment to log all coordinates // HERE
+            console.log(received_msg);          // uncomment to log all coordinates // HERE
             var tokens = received_msg.split('|');
             if (tokens[0] === 'during') {
 
@@ -368,8 +374,13 @@ function runWebSocket(quadFreqs, dbQuadFreqs) {
                 // https://www.w3schools.com/colors/colors_picker.asp?colorhex=F0F8FF
                 // var colorLvls = ['DarkRed', 'Red', 'DarkGreen', 'GreenYellow'];
                 // [White, Light Blue, Light Orange, Light Violet]
+                
                 var colorLvls = ['#ffffff', '#99cfff', '#ffcc66', '#ffccff'];
+                var colorLvls2 = ['#F74040', '#BEBEBE', '#888585', '#BEBEBE'];
+                let colorModes = [[], colorLvls, colorLvls2];
+                
 
+                // console.log("Right before adding listeners");
 
                 // INITIALISATION - DONE ONLY ONCE
                 // at first you have to color everything the most basic color
@@ -382,7 +393,7 @@ function runWebSocket(quadFreqs, dbQuadFreqs) {
                             var currSpanNum = i;
                             // var currQuadNum = j;
                             var spanHandle = $(`#${currSpanNum}.line`);   // note `#x.y` instead of `#x .y`
-                            spanHandle.css("background-color", baseColor);
+                            spanHandle.css("background-color", baseColor); // set the background to white for every line
 
                             // Highlight lines that have already been read
                             var freqs = dbQuadFreqs[i];
@@ -394,7 +405,7 @@ function runWebSocket(quadFreqs, dbQuadFreqs) {
                             // the selected span
                             // ONLY if we've read >= 10% of line
                             if (percentRead >= MIN_PERCENT_READ) {
-                                var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[2]}, ${percentRead}%, ${colorLvls[0]})`;
+                                var backgroundCSS = `linear-gradient(.25turn, ${colorModes[viewMode][2]}, ${percentRead}%, ${colorModes[viewMode][0]})`;
                                 spanHandle.css("background", backgroundCSS);
                                 dbQuadFreqs[i].push(percentRead);
                             }
@@ -480,11 +491,11 @@ function runWebSocket(quadFreqs, dbQuadFreqs) {
                         if (percentRead >= MIN_PERCENT_READ) {
                             var dbPercentRead = Math.min(dbQuadFreqs[spanNum][4], 100);
                             if (percentRead > dbPercentRead) {
-                                var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${dbPercentRead}%, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                                var backgroundCSS = `linear-gradient(.25turn, ${colorModes[viewMode][3]}, ${dbPercentRead}%, ${colorModes[viewMode][1]}, ${percentRead}%, ${colorModes[viewMode][0]})`;
                                 spanHandle.css("background", backgroundCSS);
                             }
                             else if (percentRead <= dbPercentRead) {
-                                var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]}, ${dbPercentRead}%, ${colorLvls[0]})`;
+                                var backgroundCSS = `linear-gradient(.25turn, ${colorModes[viewMode][3]}, ${percentRead}%, ${colorModes[viewMode][2]}, ${dbPercentRead}%, ${colorModes[viewMode][0]})`;
                                 spanHandle.css("background", backgroundCSS);
                             }
                         }
@@ -536,11 +547,11 @@ function runWebSocket(quadFreqs, dbQuadFreqs) {
                         // ONLY if we've read >= 10% of line
                         if (percentRead >= MIN_PERCENT_READ) {
                             if (dbQuadFreqs[lineNum][4] == 0) {
-                                var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                                var backgroundCSS = `linear-gradient(.25turn, ${colorModes[viewMode][1]}, ${percentRead}%, ${colorModes[viewMode][0]})`;
                                 spanHandle.css("background", backgroundCSS);
                             }
                             else if (dbQuadFreqs[lineNum][4] == 1) {
-                                var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]})`;
+                                var backgroundCSS = `linear-gradient(.25turn, ${colorModes[viewMode][3]}, ${percentRead}%, ${colorModes[viewMode][2]})`;
                                 spanHandle.css("background", backgroundCSS);
                             }
                         }
@@ -638,6 +649,8 @@ function runWebSocket(quadFreqs, dbQuadFreqs) {
                 */
 
                 ///////////////////////////////////////////////////////////
+
+            } else if (tokens[0] == "end") {
 
             }
         };
