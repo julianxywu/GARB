@@ -44,7 +44,7 @@ chrome.runtime.onMessage.addListener(
       else if (request.contentScriptQuery == "saveToDatabase") {
         // alert("inside savetodatabase")
         var url = "https://garb-user-pagesession.herokuapp.com/pageSessions";
-        
+        alert("saving to DB");
         //const testData = {
         //    url: 'testURL',
         //    title: 'title',
@@ -120,6 +120,15 @@ chrome.runtime.onMessage.addListener(
         contentScriptTabId = sender.tab.id;
         sendResponse("From background.js: Got your tabId!");
         return true;
+      }
+      else if (request.contentScriptQuery == "showDistractionMetric") {
+        let myData = request.data;
+        console.log(myData);
+        let focusedTimeInSecs = myData.focusedTimeInSeconds;
+        let distractionPercent =  (1 - (focusedTimeInSecs / myData.totalTime)).toFixed(4) * 100;
+        let myString = `Total time spent: ${myData.totalTime} seconds\n
+                        Time spent distracted: ${distractionPercent}%\n`
+        alert(myString);
       }
     }
 );

@@ -33,7 +33,7 @@ namespace Interaction_Interactors_101
             FixationDataStream fixationDataStream;
             Host host;
             double fixationBeginTime;
-
+            bool receivedEndFixation = true;
 
             protected override void OnMessage(MessageEventArgs e)
             {
@@ -56,8 +56,20 @@ namespace Interaction_Interactors_101
                 switch (fixation.Data.EventType)
                 {
                     case FixationDataEventType.Begin:
+
+                        // Check to see if an end-fixation message was sent
+                        if (!receivedEndFixation) {
+                            string fixString = string.Format("duration|{0}|null",
+                            fixationBeginTime > 0
+                                ? TimeSpan.FromMilliseconds(fixation.Data.Timestamp - fixationBeginTime)
+                                : TimeSpan.Zero);
+                            receivedEndFixation = true;
+                            Send(fixString);
+                        }
+
                         fixationBeginTime = fixation.Data.Timestamp;
                         string beginString = string.Format("begin|{0}|{1}", fixationPointX, fixationPointY);
+                        receivedEndFixation = false;
                         Send(beginString);
                         //Console.WriteLine(beginString);
                         break;
@@ -74,6 +86,7 @@ namespace Interaction_Interactors_101
                             fixationBeginTime > 0
                                 ? TimeSpan.FromMilliseconds(fixation.Data.Timestamp - fixationBeginTime)
                                 : TimeSpan.Zero);
+                        receivedEndFixation = true;
                         Send(fixString);
                         break;
 

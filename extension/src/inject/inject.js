@@ -10,6 +10,8 @@ alert(location.href);
 var lineQueue = new Array();
 const QUEUE_LENGTH = 10;
 const MIN_PERCENT_READ = 15;
+let startTime = 0;
+let focusedTimeInSeconds = 0;
 
 // POST request to our api to extract content
 // has to be done via background script (src/bg/background.js)
@@ -78,6 +80,7 @@ chrome.runtime.sendMessage(
                 currLineSpans.push(quadSpan);
                 // 2 - generate container line span, add to overall contentHTML string
                 contentHTML += `<span class="line" id="${spanNum}">${currLineSpans.join('')}</span>`;
+                contentHTML += "<br>";
                 // 3 = edge case where there is only one word on the next line that has not been accounted for yet
                 if (currentWord != "") {
                     quadNum = 0;
@@ -86,11 +89,13 @@ chrome.runtime.sendMessage(
                     quadSpan = `<span class="quad" id="${quadNum}${spanNum}">${currentWord}</span>`;
                     currLineSpans.push(quadSpan);
                     contentHTML += `<span class="line" id="${spanNum}">${currLineSpans.join('')}</span>`;
+                    // contentHTML += "<br><br>";
                     currentWord = "";
                 } 
 
                 // then insert line break
                 contentHTML += "<br><br>";
+
                 // now reinitialize everything
                 numCharsInQuad = 0;
                 quadNum = 0;
@@ -150,6 +155,7 @@ chrome.runtime.sendMessage(
            
                 if (quadNum == MAX_QUAD_NUM) {         // reached end of line (ie add span)
                     contentHTML += `<span class="line" id="${spanNum}">${currLineSpans.join('')}</span>`;
+                    contentHTML += "<br>";
                     // set back to initial vals
                     spanNum++;
                     quadNum = 0;
@@ -310,10 +316,20 @@ function getData(userData, spanNum) {
 
         window.addEventListener("unload", function(event) {
             // Send message to background.js to save the pageSessionData to the database
+
+            // Provide distraction metric
+            const millis = Date.now() - startTime;
+            const totalTime =  Math.floor(millis / 1000);
+
             pageSessionData.timestampEnd = Date.now();
             pageSessionData.quadFreqs = quadFreqs;
             pageSessionData.sessionClosed = true;
             console.log(pageSessionData);
+            chrome.runtime.sendMessage(
+                {contentScriptQuery: "showDistractionMetric", data: {totalTime, focusedTimeInSeconds}},
+                result => {
+                    console.log("showed distraction metric");
+                });
             chrome.runtime.sendMessage(
                 {contentScriptQuery: "saveToDatabase", data: pageSessionData},
                 result => {
@@ -331,9 +347,9 @@ function getData(userData, spanNum) {
 **************************************************************/
 
 function runWebSocket(quadFreqs, dbQuadFreqs) {
-
     // for raw coordinates:
     var data = [];    // array of [line_num, timestamp] objects
+    startTime = Date.now();
 
     if ("WebSocket" in window) {
         //alert("WebSocket is supported by your Browser!");
@@ -349,7 +365,7 @@ function runWebSocket(quadFreqs, dbQuadFreqs) {
 
         ws.onmessage = function (evt) { 
             var received_msg = evt.data;
-            console.log(received_msg);          // uncomment to log all coordinates // HERE
+            // console.log(received_msg);          // uncomment to log all coordinates // HERE
             var tokens = received_msg.split('|');
             if (tokens[0] === 'during') {
 
@@ -375,283 +391,48 @@ function runWebSocket(quadFreqs, dbQuadFreqs) {
                 // var colorLvls = ['DarkRed', 'Red', 'DarkGreen', 'GreenYellow'];
                 // [White, Light Blue, Light Orange, Light Violet]
                 
-                var colorLvls = ['#ffffff', '#99cfff', '#ffcc66', '#ffccff'];
-                var colorLvls2 = ['#F74040', '#BEBEBE', '#888585', '#BEBEBE'];
-                let colorModes = [[], colorLvls, colorLvls2];
+                // console.log("inside websocket");
                 
-
-                // console.log("Right before adding listeners");
-
-                // INITIALISATION - DONE ONLY ONCE
-                // at first you have to color everything the most basic color
-                // this is only done once, afterwards you'll continue updating
-                // each quadrant individually
-                if (!initialHighlightingDone) {
-                    for(var i = 0; i < quadFreqs.length; i++) {
-                        // for(var j = 0; j < quadFreqs[i].length; j++) {
-                            var baseColor = colorLvls[0];   // use lowest level
-                            var currSpanNum = i;
-                            // var currQuadNum = j;
-                            var spanHandle = $(`#${currSpanNum}.line`);   // note `#x.y` instead of `#x .y`
-                            spanHandle.css("background-color", baseColor); // set the background to white for every line
-
-                            // Highlight lines that have already been read
-                            var freqs = dbQuadFreqs[i];
-                            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
-                            var MAX = 450;
-                            percentRead = (normalisedFreq / MAX) * 100;
-
-                            // use linear gradient with given percent to highlight 
-                            // the selected span
-                            // ONLY if we've read >= 10% of line
-                            if (percentRead >= MIN_PERCENT_READ) {
-                                var backgroundCSS = `linear-gradient(.25turn, ${colorModes[viewMode][2]}, ${percentRead}%, ${colorModes[viewMode][0]})`;
-                                spanHandle.css("background", backgroundCSS);
-                                dbQuadFreqs[i].push(percentRead);
-                            }
-                            else {
-                                dbQuadFreqs[i].push(0);
-                            }
-                        // }
-                    }
-                    initialHighlightingDone = true;
+                switch(viewMode) {
+                    case 1:
+                        highlightMode1(ws, quadFreqs, dbQuadFreqs, x, y);
+                        break;
+                    case 2:
+                        highlightMode2(ws, quadFreqs, dbQuadFreqs, x, y);
+                        break;
+                    case 3:
+                        highlightMode3(ws, quadFreqs, dbQuadFreqs, x, y);
+                        break;
+                    case 4:
+                        highlightMode4(ws, quadFreqs, dbQuadFreqs, x, y);
+                        break;
+                    case 5:
+                        highlightMode5(ws, quadFreqs, dbQuadFreqs, x, y);
+                        break;
+                    case 6:
+                        highlightMode6(ws, quadFreqs, dbQuadFreqs, x, y);
+                        break;
+                    case 7:
+                        highlightMode7(ws, quadFreqs, dbQuadFreqs, x, y);
+                        break;
+                    case 8:
+                        highlightMode8(ws, quadFreqs, dbQuadFreqs, x, y);
+                        break;
+                    case 9:
+                        highlightMode9(ws, quadFreqs, dbQuadFreqs, x, y);
+                        break;
+                    case 10:
+                        highlightMode10(ws, quadFreqs, dbQuadFreqs, x, y);
+                        break;
+                    default:
+                        highlightMode1(ws, quadFreqs, dbQuadFreqs, x, y);
                 }
-
-                // console.log(dbQuadFreqs);
-                // console.log(quadFreqs);
-
-                var currQuadId = '';
-                var currLineId = '';
-
-                // -----------------
-                // STEP 1 
-                // -----------------
-                // check if gaze is on a quadrant, line, or neither
-                el = document.elementFromPoint(x, y);
-                // if element under pointer is one of our quads
-                if (el != null){
-                    var isSpan = (el.nodeName.toLowerCase() == "span");
-                    var spanClassName = $(el).attr('class');
-                    if (isSpan) {
-                        if (spanClassName == "quad") {
-                            // extract and set id of our pointer
-                            currQuadId = $(el).attr('id');
-                        } else if (spanClassName == "line") {
-                            currLineId = $(el).attr('id');
-                        }
-                    }
-                }
-                
-
-                // -----------------
-                // STEP 2
-                // -----------------
-                // IF gaze was on a line
-                var infoStr = '';               // will fill with info you send back to server
-
-                // CASE 1 - gaze rested on specific quadrant (subset of line)
-                // -----------------
-                if (currQuadId != '') {
-                    // parse the quadrant span's ID for quad number and span number
-                    // quadNums range [0,3], whereas spans are [0,INF]
-                    // In a string XYYYY , X = quad number, Y = span number
-                    var quadNum = parseInt(currQuadId.charAt(0));
-                    var spanNum = parseInt(currQuadId.substr(1));
-
-                    // selector for span containing these quadrants
-                    var spanHandle = $(`#${spanNum}.line`);     // note `#x.y` instead of `#x .y`
-
-                    // record info on line num, quad num, and timestamp
-                    const t = (new Date()).getTime();
-                    infoStr = `${spanNum}|${quadNum}|${t}`;
-
-                    // if new line is NOT an outlier, process it. Otherwise don't
-                    if (lineIsValid(lineQueue, spanNum)) {
-                        // add to queue
-                        lineQueue.push(spanNum);       // add to end of array
-                        // and remove previous oldest from queue (after queue is of length)
-                        if (lineQueue.length > QUEUE_LENGTH) {
-                            lineQueue.shift(); // removes first element from array
-                        }
-
-                        // increment entry for relevant quadrant 
-                        // of relevant line in freq matrix
-                        quadFreqs[spanNum][quadNum] += 1;
-
-                        // use custom formula to convert frequencies for each
-                        // quadrant to a single percent read 
-                        var freqs = quadFreqs[spanNum];
-                        var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
-                        var MAX = 450;
-                        percentRead = (normalisedFreq / MAX) * 100;
-                        
-                        // use linear gradient with given percent to highlight 
-                        // the selected span
-                        // ONLY if we've read >= 10% of line
-                        if (percentRead >= MIN_PERCENT_READ) {
-                            var dbPercentRead = Math.min(dbQuadFreqs[spanNum][4], 100);
-                            if (percentRead > dbPercentRead) {
-                                var backgroundCSS = `linear-gradient(.25turn, ${colorModes[viewMode][3]}, ${dbPercentRead}%, ${colorModes[viewMode][1]}, ${percentRead}%, ${colorModes[viewMode][0]})`;
-                                spanHandle.css("background", backgroundCSS);
-                            }
-                            else if (percentRead <= dbPercentRead) {
-                                var backgroundCSS = `linear-gradient(.25turn, ${colorModes[viewMode][3]}, ${percentRead}%, ${colorModes[viewMode][2]}, ${dbPercentRead}%, ${colorModes[viewMode][0]})`;
-                                spanHandle.css("background", backgroundCSS);
-                            }
-                        }
-                    }
-                
-                // CASE 2 - gaze rested on a line, but no specific quadrant
-                // -----------------
-                } else if (currLineId != '') {        // Gaze not on a line
-                    // id of `line` span == line number of that span
-                    var lineNum = currLineId;
-                    // get a handle on the span corresponding to that line
-                    var spanHandle = $(`#${lineNum}.line`);     // note `#x.y` instead of `#x .y`
-
-                    // record info on line num, quad num, and timestamp
-                    const t = (new Date()).getTime();
-                    infoStr = `${lineNum}|NA|${t}`;
-
-                    lineNum = parseInt(lineNum);
-
-                    // if new line is NOT an outlier, process it. Otherwise don't
-                    if (lineIsValid(lineQueue, lineNum)) {
-                        // add to queue
-                        lineQueue.push(lineNum);       // add to end of array
-                        // and remove previous oldest from queue (after queue is of length)
-                        if (lineQueue.length > QUEUE_LENGTH) {
-                            lineQueue.shift(); // removes first element from array
-                        }
-
-                        // increment entry for quadrants of relevant line in freq matrix
-                        // custom decision on how to distribute credit by quadrants
-                        // since we don't know of specific quadrant
-                        // right now: 4/8, 2/8, 1/8, 1/8 
-                        
-                        // console.log(quadFreqs);
-                        quadFreqs[lineNum][0] += 0.50;
-                        quadFreqs[lineNum][1] += 0.25;
-                        quadFreqs[lineNum][2] += 0.125;
-                        quadFreqs[lineNum][3] += 0.125;
-
-                        // use custom formulat to convert frequencies for each
-                        // quadrant to a single percent read 
-                        var freqs = quadFreqs[lineNum];
-                        var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
-                        var MAX = 450;
-                        percentRead = (normalisedFreq / MAX) * 100;
-
-                        // use linear gradient with given percent to highlight 
-                        // the selected span
-                        // ONLY if we've read >= 10% of line
-                        if (percentRead >= MIN_PERCENT_READ) {
-                            if (dbQuadFreqs[lineNum][4] == 0) {
-                                var backgroundCSS = `linear-gradient(.25turn, ${colorModes[viewMode][1]}, ${percentRead}%, ${colorModes[viewMode][0]})`;
-                                spanHandle.css("background", backgroundCSS);
-                            }
-                            else if (dbQuadFreqs[lineNum][4] == 1) {
-                                var backgroundCSS = `linear-gradient(.25turn, ${colorModes[viewMode][3]}, ${percentRead}%, ${colorModes[viewMode][2]})`;
-                                spanHandle.css("background", backgroundCSS);
-                            }
-                        }
-                    }
-                
-                // CASE 3 -- gaze did not rest on a line at all
-                // -----------------
-                } else {
-                    // record that you weren't looking at a line
-                    const t = (new Date()).getTime();
-                    infoStr = `-1|-1|${t}`;                        
-                }
-
-                // send info on line num, quad num, and timestamp, back to server
-                // console.log(infoStr);
-                ws.send(infoStr);
-
-
-                ///////////////////////////////////////////////////////////
-
-
-
-                ///////////////////////////////////////////////////////////
-                // HIGHLIGHTING MECHANISM: only quadrant-based
-                ///////////////////////////////////////////////////////////
-
-                /*      // uncomment to activate
-
-                // https://www.w3schools.com/cssref/css_colors.asp
-                // https://www.w3schools.com/colors/colors_picker.asp?colorhex=F0F8FF
-                var colorLvls = ['DarkRed', 'Red', 'DarkGreen', 'GreenYellow'];
-                // var colorLvls = ['#ffffff', '#f0f8ff', '#cce7ff', '#99cfff'];
-                var freqLvls = [5, 10, 15, 20];
-
-                // INITIALISATION - DONE ONLY ONCE
-                // at first you have to color everything the most basic color
-                // this is only done once, afterwards you'll continue updating
-                // each quadrant individually
-                if (!initialHighlightingDone) {
-                    for(var i = 0; i < quadFreqs.length; i++) {
-                        for(var j = 0; j < quadFreqs[i].length; j++) {
-                            var currQuadFreq = quadFreqs[i][j];
-                            var lvl = 0;            // use lowest level
-                            var thisQuadColor = colorLvls[lvl];
-                            var currSpanNum = i;
-                            var currQuadNum = j;
-                            var thisQuadId = `${currQuadNum.toString()}${currSpanNum.toString()}`
-                            $(`#${thisQuadId}`).css("background-color", thisQuadColor);
-                        }
-                    }
-                    initialHighlightingDone = true;
-                }
-
-                var currQuadId = '';
-
-                // STEP 1 
-                // check if gaze is on a quadrant
-                el = document.elementFromPoint(x, y);
-                // if element under pointer is one of our quads
-                if (el != null){
-                    var isSpan = (el.nodeName.toLowerCase() == "span");
-                    var isOurClass = ($(el).attr('class') == "quad");
-                    if (isSpan && isOurClass) {
-                        // extract and set id of our pointer
-                        currQuadId = $(el).attr('id');
-                    }
-                } 
-                
-                // STEP 2
-                // take action only if gaze was on a quadrant
-                if (currQuadId != '') {
-                    // parse the quadrant span's ID for quad number and span number
-                    // quadNums range [0,3], whereas spans are [0,INF]
-                    // In a string XYYYY , X = quad number, Y = span number
-                    var quadNum = parseInt(currQuadId.charAt(0));
-                    var spanNum = parseInt(currQuadId.substr(1));
-
-                    // increment entry for relevant quadrant 
-                    // of relevant line in freq matrix
-                    quadFreqs[spanNum][quadNum] += 1;
-
-                    // find which level this new frequency corresponds to
-                    for(var k = 0; k < freqLvls.length; k++) {
-                        var currQuadFreq = quadFreqs[spanNum][quadNum];
-                        if (currQuadFreq < freqLvls[k]) {
-                            // found relevant level, color the quadrant using 
-                            // lvl as index for which color to use
-                            var thisLvlColor = colorLvls[k];
-                            $(`#${currQuadId}`).css("background-color", thisLvlColor);
-                            break;     // exit out once you've found & used correct level
-                        }
-                    }
-                }
-
-                */
-
-                ///////////////////////////////////////////////////////////
-
-            } else if (tokens[0] == "end") {
-
+            // Getting the duration of each fixation
+            } else if (tokens[0] == "duration") {
+                temp = tokens[1].split(":");
+                result = temp[2];
+                focusedTimeInSeconds += parseFloat(result);
+                // console.log("focusedTime is now: " + focusedTimeInSeconds);
             }
         };
 
@@ -689,6 +470,2003 @@ function runWebSocket(quadFreqs, dbQuadFreqs) {
         // The browser doesn't support WebSocket
         alert("WebSocket NOT supported by your Browser!");
     }
+}
+
+function highlightMode1(ws, quadFreqs, dbQuadFreqs, x, y) {
+    // INITIALISATION - DONE ONLY ONCE
+    // at first you have to color everything the most basic color
+    // this is only done once, afterwards you'll continue updating
+    // each quadrant individually
+
+    // White, 
+    var colorLvls = ['#ffffff', '#a4a4a4'];
+
+
+    if (!initialHighlightingDone) {
+        for(var i = 0; i < quadFreqs.length; i++) {
+            // for(var j = 0; j < quadFreqs[i].length; j++) {
+                var baseColor = colorLvls[0];   // use lowest level
+                var currSpanNum = i;
+                // var currQuadNum = j;
+                var spanHandle = $(`#${currSpanNum}.line`);   // note `#x.y` instead of `#x .y`
+                spanHandle.css("background-color", baseColor); // set the background to white for every line
+
+                // Highlight lines that have already been read
+                var freqs = dbQuadFreqs[i];
+                var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+                var MAX = 450;
+                percentRead = (normalisedFreq / MAX) * 100;
+
+                // use linear gradient with given percent to highlight 
+                // the selected span
+                // ONLY if we've read >= 10% of line
+                if (percentRead >= MIN_PERCENT_READ) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                    dbQuadFreqs[i].push(percentRead);
+                }
+                else {
+                    dbQuadFreqs[i].push(0);
+                }
+            // } 
+        }
+        initialHighlightingDone = true;
+    }
+
+    // console.log(dbQuadFreqs);
+    // console.log(quadFreqs);
+
+    var currQuadId = '';
+    var currLineId = '';
+
+    // -----------------
+    // STEP 1 
+    // -----------------
+    // check if gaze is on a quadrant, line, or neither
+    el = document.elementFromPoint(x, y);
+    // if element under pointer is one of our quads
+    if (el != null){
+        var isSpan = (el.nodeName.toLowerCase() == "span");
+        var spanClassName = $(el).attr('class');
+        if (isSpan) {
+            if (spanClassName == "quad") {
+                // extract and set id of our pointer
+                currQuadId = $(el).attr('id');
+            } else if (spanClassName == "line") {
+                currLineId = $(el).attr('id');
+            }
+        }
+    }
+    
+
+    // -----------------
+    // STEP 2
+    // -----------------
+    // IF gaze was on a line
+    var infoStr = '';               // will fill with info you send back to server
+
+    // CASE 1 - gaze rested on specific quadrant (subset of line)
+    // -----------------
+    if (currQuadId != '') {
+        // parse the quadrant span's ID for quad number and span number
+        // quadNums range [0,3], whereas spans are [0,INF]
+        // In a string XYYYY , X = quad number, Y = span number
+        var quadNum = parseInt(currQuadId.charAt(0));
+        var spanNum = parseInt(currQuadId.substr(1));
+
+        // selector for span containing these quadrants
+        var spanHandle = $(`#${spanNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${spanNum}|${quadNum}|${t}`;
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, spanNum)) {
+            // add to queue
+            lineQueue.push(spanNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for relevant quadrant 
+            // of relevant line in freq matrix
+            quadFreqs[spanNum][quadNum] += 1;
+
+            // use custom formula to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[spanNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+            
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                spanHandle.css("background", backgroundCSS);
+            }
+        }
+    
+    // CASE 2 - gaze rested on a line, but no specific quadrant
+    // -----------------
+    } else if (currLineId != '') {        // Gaze not on a line
+        // id of `line` span == line number of that span
+        var lineNum = currLineId;
+        // get a handle on the span corresponding to that line
+        var spanHandle = $(`#${lineNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${lineNum}|NA|${t}`;
+
+        lineNum = parseInt(lineNum);
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, lineNum)) {
+            // add to queue
+            lineQueue.push(lineNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for quadrants of relevant line in freq matrix
+            // custom decision on how to distribute credit by quadrants
+            // since we don't know of specific quadrant
+            // right now: 4/8, 2/8, 1/8, 1/8 
+            
+            // console.log(quadFreqs);
+            quadFreqs[lineNum][0] += 0.50;
+            quadFreqs[lineNum][1] += 0.25;
+            quadFreqs[lineNum][2] += 0.125;
+            quadFreqs[lineNum][3] += 0.125;
+
+            // use custom formulat to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[lineNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                spanHandle.css("background", backgroundCSS);
+            }
+        }
+                
+    // CASE 3 -- gaze did not rest on a line at all
+    // -----------------
+    } else {
+        // record that you weren't looking at a line
+        const t = (new Date()).getTime();
+        infoStr = `-1|-1|${t}`;                        
+    }
+
+    // send info on line num, quad num, and timestamp, back to server
+    // console.log(infoStr);
+    ws.send(infoStr);
+
+}
+
+function highlightMode2(ws, quadFreqs, dbQuadFreqs, x, y) {
+    // INITIALISATION - DONE ONLY ONCE
+    // at first you have to color everything the most basic color
+    // this is only done once, afterwards you'll continue updating
+    // each quadrant individually
+    var colorLvls = ['#F74040', '#BEBEBE', '#888585', '#BEBEBE'];
+
+
+    if (!initialHighlightingDone) {
+        for(var i = 0; i < quadFreqs.length; i++) {
+            // for(var j = 0; j < quadFreqs[i].length; j++) {
+                var baseColor = colorLvls[0];   // use lowest level
+                var currSpanNum = i;
+                // var currQuadNum = j;
+                var spanHandle = $(`#${currSpanNum}.line`);   // note `#x.y` instead of `#x .y`
+                spanHandle.css("background-color", baseColor); // set the background to white for every line
+
+                // Highlight lines that have already been read
+                var freqs = dbQuadFreqs[i];
+                var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+                var MAX = 450;
+                percentRead = (normalisedFreq / MAX) * 100;
+
+                // use linear gradient with given percent to highlight 
+                // the selected span
+                // ONLY if we've read >= 10% of line
+                if (percentRead >= MIN_PERCENT_READ) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[2]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                    dbQuadFreqs[i].push(percentRead);
+                }
+                else {
+                    dbQuadFreqs[i].push(0);
+                }
+            // }
+        }
+        initialHighlightingDone = true;
+    }
+
+    // console.log(dbQuadFreqs);
+    // console.log(quadFreqs);
+
+    var currQuadId = '';
+    var currLineId = '';
+
+    // -----------------
+    // STEP 1 
+    // -----------------
+    // check if gaze is on a quadrant, line, or neither
+    el = document.elementFromPoint(x, y);
+    // if element under pointer is one of our quads
+    if (el != null){
+        var isSpan = (el.nodeName.toLowerCase() == "span");
+        var spanClassName = $(el).attr('class');
+        if (isSpan) {
+            if (spanClassName == "quad") {
+                // extract and set id of our pointer
+                currQuadId = $(el).attr('id');
+            } else if (spanClassName == "line") {
+                currLineId = $(el).attr('id');
+            }
+        }
+    }
+    
+
+    // -----------------
+    // STEP 2
+    // -----------------
+    // IF gaze was on a line
+    var infoStr = '';               // will fill with info you send back to server
+
+    // CASE 1 - gaze rested on specific quadrant (subset of line)
+    // -----------------
+    if (currQuadId != '') {
+        // parse the quadrant span's ID for quad number and span number
+        // quadNums range [0,3], whereas spans are [0,INF]
+        // In a string XYYYY , X = quad number, Y = span number
+        var quadNum = parseInt(currQuadId.charAt(0));
+        var spanNum = parseInt(currQuadId.substr(1));
+
+        // selector for span containing these quadrants
+        var spanHandle = $(`#${spanNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${spanNum}|${quadNum}|${t}`;
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, spanNum)) {
+            // add to queue
+            lineQueue.push(spanNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for relevant quadrant 
+            // of relevant line in freq matrix
+            quadFreqs[spanNum][quadNum] += 1;
+
+            // use custom formula to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[spanNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+            
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                var dbPercentRead = Math.min(dbQuadFreqs[spanNum][4], 100);
+                if (percentRead > dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${dbPercentRead}%, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (percentRead <= dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]}, ${dbPercentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+    
+    // CASE 2 - gaze rested on a line, but no specific quadrant
+    // -----------------
+    } else if (currLineId != '') {        // Gaze not on a line
+        // id of `line` span == line number of that span
+        var lineNum = currLineId;
+        // get a handle on the span corresponding to that line
+        var spanHandle = $(`#${lineNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${lineNum}|NA|${t}`;
+
+        lineNum = parseInt(lineNum);
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, lineNum)) {
+            // add to queue
+            lineQueue.push(lineNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for quadrants of relevant line in freq matrix
+            // custom decision on how to distribute credit by quadrants
+            // since we don't know of specific quadrant
+            // right now: 4/8, 2/8, 1/8, 1/8 
+            
+            // console.log(quadFreqs);
+            quadFreqs[lineNum][0] += 0.50;
+            quadFreqs[lineNum][1] += 0.25;
+            quadFreqs[lineNum][2] += 0.125;
+            quadFreqs[lineNum][3] += 0.125;
+
+            // use custom formulat to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[lineNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                if (dbQuadFreqs[lineNum][4] == 0) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (dbQuadFreqs[lineNum][4] == 1) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+                
+    // CASE 3 -- gaze did not rest on a line at all
+    // -----------------
+    } else {
+        // record that you weren't looking at a line
+        const t = (new Date()).getTime();
+        infoStr = `-1|-1|${t}`;                        
+    }
+
+    // send info on line num, quad num, and timestamp, back to server
+    // console.log(infoStr);
+    ws.send(infoStr);
+
+
+    ///////////////////////////////////////////////////////////
+
+
+
+    ///////////////////////////////////////////////////////////
+    // HIGHLIGHTING MECHANISM: only quadrant-based
+    ///////////////////////////////////////////////////////////
+
+    /*      // uncomment to activate
+
+    // https://www.w3schools.com/cssref/css_colors.asp
+    // https://www.w3schools.com/colors/colors_picker.asp?colorhex=F0F8FF
+    var colorLvls = ['DarkRed', 'Red', 'DarkGreen', 'GreenYellow'];
+    // var colorLvls = ['#ffffff', '#f0f8ff', '#cce7ff', '#99cfff'];
+    var freqLvls = [5, 10, 15, 20];
+
+    // INITIALISATION - DONE ONLY ONCE
+    // at first you have to color everything the most basic color
+    // this is only done once, afterwards you'll continue updating
+    // each quadrant individually
+    if (!initialHighlightingDone) {
+        for(var i = 0; i < quadFreqs.length; i++) {
+            for(var j = 0; j < quadFreqs[i].length; j++) {
+                var currQuadFreq = quadFreqs[i][j];
+                var lvl = 0;            // use lowest level
+                var thisQuadColor = colorLvls[lvl];
+                var currSpanNum = i;
+                var currQuadNum = j;
+                var thisQuadId = `${currQuadNum.toString()}${currSpanNum.toString()}`
+                $(`#${thisQuadId}`).css("background-color", thisQuadColor);
+            }
+        }
+        initialHighlightingDone = true;
+    }
+
+    var currQuadId = '';
+
+    // STEP 1 
+    // check if gaze is on a quadrant
+    el = document.elementFromPoint(x, y);
+    // if element under pointer is one of our quads
+    if (el != null){
+        var isSpan = (el.nodeName.toLowerCase() == "span");
+        var isOurClass = ($(el).attr('class') == "quad");
+        if (isSpan && isOurClass) {
+            // extract and set id of our pointer
+            currQuadId = $(el).attr('id');
+        }
+    } 
+    
+    // STEP 2
+    // take action only if gaze was on a quadrant
+    if (currQuadId != '') {
+        // parse the quadrant span's ID for quad number and span number
+        // quadNums range [0,3], whereas spans are [0,INF]
+        // In a string XYYYY , X = quad number, Y = span number
+        var quadNum = parseInt(currQuadId.charAt(0));
+        var spanNum = parseInt(currQuadId.substr(1));
+
+        // increment entry for relevant quadrant 
+        // of relevant line in freq matrix
+        quadFreqs[spanNum][quadNum] += 1;
+
+        // find which level this new frequency corresponds to
+        for(var k = 0; k < freqLvls.length; k++) {
+            var currQuadFreq = quadFreqs[spanNum][quadNum];
+            if (currQuadFreq < freqLvls[k]) {
+                // found relevant level, color the quadrant using 
+                // lvl as index for which color to use
+                var thisLvlColor = colorLvls[k];
+                $(`#${currQuadId}`).css("background-color", thisLvlColor);
+                break;     // exit out once you've found & used correct level
+            }
+        }
+    }
+
+    */
+}
+
+function highlightMode3(ws, quadFreqs, dbQuadFreqs, x, y) {
+    // INITIALISATION - DONE ONLY ONCE
+    // at first you have to color everything the most basic color
+    // this is only done once, afterwards you'll continue updating
+    // each quadrant individually
+    var colorLvls = ['#ffffff', '#99cfff', '#ffcc66', '#ffccff'];
+
+
+    if (!initialHighlightingDone) {
+        for(var i = 0; i < quadFreqs.length; i++) {
+            // for(var j = 0; j < quadFreqs[i].length; j++) {
+                var baseColor = colorLvls[0];   // use lowest level
+                var currSpanNum = i;
+                // var currQuadNum = j;
+                var spanHandle = $(`#${currSpanNum}.line`);   // note `#x.y` instead of `#x .y`
+                spanHandle.css("background-color", baseColor); // set the background to white for every line
+
+                // Highlight lines that have already been read
+                var freqs = dbQuadFreqs[i];
+                var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+                var MAX = 450;
+                percentRead = (normalisedFreq / MAX) * 100;
+
+                // use linear gradient with given percent to highlight 
+                // the selected span
+                // ONLY if we've read >= 10% of line
+                if (percentRead >= MIN_PERCENT_READ) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[2]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                    dbQuadFreqs[i].push(percentRead);
+                }
+                else {
+                    dbQuadFreqs[i].push(0);
+                }
+            // } 
+        }
+        initialHighlightingDone = true;
+    }
+
+    // console.log(dbQuadFreqs);
+    // console.log(quadFreqs);
+
+    var currQuadId = '';
+    var currLineId = '';
+
+    // -----------------
+    // STEP 1 
+    // -----------------
+    // check if gaze is on a quadrant, line, or neither
+    el = document.elementFromPoint(x, y);
+    // if element under pointer is one of our quads
+    if (el != null){
+        var isSpan = (el.nodeName.toLowerCase() == "span");
+        var spanClassName = $(el).attr('class');
+        if (isSpan) {
+            if (spanClassName == "quad") {
+                // extract and set id of our pointer
+                currQuadId = $(el).attr('id');
+            } else if (spanClassName == "line") {
+                currLineId = $(el).attr('id');
+            }
+        }
+    }
+    
+
+    // -----------------
+    // STEP 2
+    // -----------------
+    // IF gaze was on a line
+    var infoStr = '';               // will fill with info you send back to server
+
+    // CASE 1 - gaze rested on specific quadrant (subset of line)
+    // -----------------
+    if (currQuadId != '') {
+        // parse the quadrant span's ID for quad number and span number
+        // quadNums range [0,3], whereas spans are [0,INF]
+        // In a string XYYYY , X = quad number, Y = span number
+        var quadNum = parseInt(currQuadId.charAt(0));
+        var spanNum = parseInt(currQuadId.substr(1));
+
+        // selector for span containing these quadrants
+        var spanHandle = $(`#${spanNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${spanNum}|${quadNum}|${t}`;
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, spanNum)) {
+            // add to queue
+            lineQueue.push(spanNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for relevant quadrant 
+            // of relevant line in freq matrix
+            quadFreqs[spanNum][quadNum] += 1;
+
+            // use custom formula to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[spanNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+            
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                var dbPercentRead = Math.min(dbQuadFreqs[spanNum][4], 100);
+                if (percentRead > dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${dbPercentRead}%, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (percentRead <= dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]}, ${dbPercentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+    
+    // CASE 2 - gaze rested on a line, but no specific quadrant
+    // -----------------
+    } else if (currLineId != '') {        // Gaze not on a line
+        // id of `line` span == line number of that span
+        var lineNum = currLineId;
+        // get a handle on the span corresponding to that line
+        var spanHandle = $(`#${lineNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${lineNum}|NA|${t}`;
+
+        lineNum = parseInt(lineNum);
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, lineNum)) {
+            // add to queue
+            lineQueue.push(lineNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for quadrants of relevant line in freq matrix
+            // custom decision on how to distribute credit by quadrants
+            // since we don't know of specific quadrant
+            // right now: 4/8, 2/8, 1/8, 1/8 
+            
+            // console.log(quadFreqs);
+            quadFreqs[lineNum][0] += 0.50;
+            quadFreqs[lineNum][1] += 0.25;
+            quadFreqs[lineNum][2] += 0.125;
+            quadFreqs[lineNum][3] += 0.125;
+
+            // use custom formulat to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[lineNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                if (dbQuadFreqs[lineNum][4] == 0) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (dbQuadFreqs[lineNum][4] == 1) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+                
+    // CASE 3 -- gaze did not rest on a line at all
+    // -----------------
+    } else {
+        // record that you weren't looking at a line
+        const t = (new Date()).getTime();
+        infoStr = `-1|-1|${t}`;                        
+    }
+
+    // send info on line num, quad num, and timestamp, back to server
+    // console.log(infoStr);
+    ws.send(infoStr);
+
+}
+
+function highlightMode4(ws, quadFreqs, dbQuadFreqs, x, y) {
+    // INITIALISATION - DONE ONLY ONCE
+    // at first you have to color everything the most basic color
+    // this is only done once, afterwards you'll continue updating
+    // each quadrant individually
+    var colorLvls = ['#ffffff', '#99cfff', '#ffcc66', '#ffccff'];
+
+
+    if (!initialHighlightingDone) {
+        for(var i = 0; i < quadFreqs.length; i++) {
+            // for(var j = 0; j < quadFreqs[i].length; j++) {
+                var baseColor = colorLvls[0];   // use lowest level
+                var currSpanNum = i;
+                // var currQuadNum = j;
+                var spanHandle = $(`#${currSpanNum}.line`);   // note `#x.y` instead of `#x .y`
+                spanHandle.css("background-color", baseColor); // set the background to white for every line
+
+                // Highlight lines that have already been read
+                var freqs = dbQuadFreqs[i];
+                var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+                var MAX = 450;
+                percentRead = (normalisedFreq / MAX) * 100;
+
+                // use linear gradient with given percent to highlight 
+                // the selected span
+                // ONLY if we've read >= 10% of line
+                if (percentRead >= MIN_PERCENT_READ) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[2]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                    dbQuadFreqs[i].push(percentRead);
+                }
+                else {
+                    dbQuadFreqs[i].push(0);
+                }
+            // } 
+        }
+        initialHighlightingDone = true;
+    }
+
+    // console.log(dbQuadFreqs);
+    // console.log(quadFreqs);
+
+    var currQuadId = '';
+    var currLineId = '';
+
+    // -----------------
+    // STEP 1 
+    // -----------------
+    // check if gaze is on a quadrant, line, or neither
+    el = document.elementFromPoint(x, y);
+    // if element under pointer is one of our quads
+    if (el != null){
+        var isSpan = (el.nodeName.toLowerCase() == "span");
+        var spanClassName = $(el).attr('class');
+        if (isSpan) {
+            if (spanClassName == "quad") {
+                // extract and set id of our pointer
+                currQuadId = $(el).attr('id');
+            } else if (spanClassName == "line") {
+                currLineId = $(el).attr('id');
+            }
+        }
+    }
+    
+
+    // -----------------
+    // STEP 2
+    // -----------------
+    // IF gaze was on a line
+    var infoStr = '';               // will fill with info you send back to server
+
+    // CASE 1 - gaze rested on specific quadrant (subset of line)
+    // -----------------
+    if (currQuadId != '') {
+        // parse the quadrant span's ID for quad number and span number
+        // quadNums range [0,3], whereas spans are [0,INF]
+        // In a string XYYYY , X = quad number, Y = span number
+        var quadNum = parseInt(currQuadId.charAt(0));
+        var spanNum = parseInt(currQuadId.substr(1));
+
+        // selector for span containing these quadrants
+        var spanHandle = $(`#${spanNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${spanNum}|${quadNum}|${t}`;
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, spanNum)) {
+            // add to queue
+            lineQueue.push(spanNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for relevant quadrant 
+            // of relevant line in freq matrix
+            quadFreqs[spanNum][quadNum] += 1;
+
+            // use custom formula to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[spanNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+            
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                var dbPercentRead = Math.min(dbQuadFreqs[spanNum][4], 100);
+                if (percentRead > dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${dbPercentRead}%, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (percentRead <= dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]}, ${dbPercentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+    
+    // CASE 2 - gaze rested on a line, but no specific quadrant
+    // -----------------
+    } else if (currLineId != '') {        // Gaze not on a line
+        // id of `line` span == line number of that span
+        var lineNum = currLineId;
+        // get a handle on the span corresponding to that line
+        var spanHandle = $(`#${lineNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${lineNum}|NA|${t}`;
+
+        lineNum = parseInt(lineNum);
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, lineNum)) {
+            // add to queue
+            lineQueue.push(lineNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for quadrants of relevant line in freq matrix
+            // custom decision on how to distribute credit by quadrants
+            // since we don't know of specific quadrant
+            // right now: 4/8, 2/8, 1/8, 1/8 
+            
+            // console.log(quadFreqs);
+            quadFreqs[lineNum][0] += 0.50;
+            quadFreqs[lineNum][1] += 0.25;
+            quadFreqs[lineNum][2] += 0.125;
+            quadFreqs[lineNum][3] += 0.125;
+
+            // use custom formulat to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[lineNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                if (dbQuadFreqs[lineNum][4] == 0) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (dbQuadFreqs[lineNum][4] == 1) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+                
+    // CASE 3 -- gaze did not rest on a line at all
+    // -----------------
+    } else {
+        // record that you weren't looking at a line
+        const t = (new Date()).getTime();
+        infoStr = `-1|-1|${t}`;                        
+    }
+
+    // send info on line num, quad num, and timestamp, back to server
+    // console.log(infoStr);
+    ws.send(infoStr);
+
+}
+
+function highlightMode5(ws, quadFreqs, dbQuadFreqs, x, y) {
+    // INITIALISATION - DONE ONLY ONCE
+    // at first you have to color everything the most basic color
+    // this is only done once, afterwards you'll continue updating
+    // each quadrant individually
+    var colorLvls = ['#ffffff', '#99cfff', '#ffcc66', '#ffccff'];
+
+
+    if (!initialHighlightingDone) {
+        for(var i = 0; i < quadFreqs.length; i++) {
+            // for(var j = 0; j < quadFreqs[i].length; j++) {
+                var baseColor = colorLvls[0];   // use lowest level
+                var currSpanNum = i;
+                // var currQuadNum = j;
+                var spanHandle = $(`#${currSpanNum}.line`);   // note `#x.y` instead of `#x .y`
+                spanHandle.css("background-color", baseColor); // set the background to white for every line
+
+                // Highlight lines that have already been read
+                var freqs = dbQuadFreqs[i];
+                var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+                var MAX = 450;
+                percentRead = (normalisedFreq / MAX) * 100;
+
+                // use linear gradient with given percent to highlight 
+                // the selected span
+                // ONLY if we've read >= 10% of line
+                if (percentRead >= MIN_PERCENT_READ) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[2]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                    dbQuadFreqs[i].push(percentRead);
+                }
+                else {
+                    dbQuadFreqs[i].push(0);
+                }
+            // } 
+        }
+        initialHighlightingDone = true;
+    }
+
+    // console.log(dbQuadFreqs);
+    // console.log(quadFreqs);
+
+    var currQuadId = '';
+    var currLineId = '';
+
+    // -----------------
+    // STEP 1 
+    // -----------------
+    // check if gaze is on a quadrant, line, or neither
+    el = document.elementFromPoint(x, y);
+    // if element under pointer is one of our quads
+    if (el != null){
+        var isSpan = (el.nodeName.toLowerCase() == "span");
+        var spanClassName = $(el).attr('class');
+        if (isSpan) {
+            if (spanClassName == "quad") {
+                // extract and set id of our pointer
+                currQuadId = $(el).attr('id');
+            } else if (spanClassName == "line") {
+                currLineId = $(el).attr('id');
+            }
+        }
+    }
+    
+
+    // -----------------
+    // STEP 2
+    // -----------------
+    // IF gaze was on a line
+    var infoStr = '';               // will fill with info you send back to server
+
+    // CASE 1 - gaze rested on specific quadrant (subset of line)
+    // -----------------
+    if (currQuadId != '') {
+        // parse the quadrant span's ID for quad number and span number
+        // quadNums range [0,3], whereas spans are [0,INF]
+        // In a string XYYYY , X = quad number, Y = span number
+        var quadNum = parseInt(currQuadId.charAt(0));
+        var spanNum = parseInt(currQuadId.substr(1));
+
+        // selector for span containing these quadrants
+        var spanHandle = $(`#${spanNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${spanNum}|${quadNum}|${t}`;
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, spanNum)) {
+            // add to queue
+            lineQueue.push(spanNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for relevant quadrant 
+            // of relevant line in freq matrix
+            quadFreqs[spanNum][quadNum] += 1;
+
+            // use custom formula to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[spanNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+            
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                var dbPercentRead = Math.min(dbQuadFreqs[spanNum][4], 100);
+                if (percentRead > dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${dbPercentRead}%, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (percentRead <= dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]}, ${dbPercentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+    
+    // CASE 2 - gaze rested on a line, but no specific quadrant
+    // -----------------
+    } else if (currLineId != '') {        // Gaze not on a line
+        // id of `line` span == line number of that span
+        var lineNum = currLineId;
+        // get a handle on the span corresponding to that line
+        var spanHandle = $(`#${lineNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${lineNum}|NA|${t}`;
+
+        lineNum = parseInt(lineNum);
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, lineNum)) {
+            // add to queue
+            lineQueue.push(lineNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for quadrants of relevant line in freq matrix
+            // custom decision on how to distribute credit by quadrants
+            // since we don't know of specific quadrant
+            // right now: 4/8, 2/8, 1/8, 1/8 
+            
+            // console.log(quadFreqs);
+            quadFreqs[lineNum][0] += 0.50;
+            quadFreqs[lineNum][1] += 0.25;
+            quadFreqs[lineNum][2] += 0.125;
+            quadFreqs[lineNum][3] += 0.125;
+
+            // use custom formulat to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[lineNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                if (dbQuadFreqs[lineNum][4] == 0) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (dbQuadFreqs[lineNum][4] == 1) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+                
+    // CASE 3 -- gaze did not rest on a line at all
+    // -----------------
+    } else {
+        // record that you weren't looking at a line
+        const t = (new Date()).getTime();
+        infoStr = `-1|-1|${t}`;                        
+    }
+
+    // send info on line num, quad num, and timestamp, back to server
+    // console.log(infoStr);
+    ws.send(infoStr);
+
+}
+
+function highlightMode6(ws, quadFreqs, dbQuadFreqs, x, y) {
+    // INITIALISATION - DONE ONLY ONCE
+    // at first you have to color everything the most basic color
+    // this is only done once, afterwards you'll continue updating
+    // each quadrant individually
+    var colorLvls = ['#ffffff', '#99cfff', '#ffcc66', '#ffccff'];
+
+
+    if (!initialHighlightingDone) {
+        for(var i = 0; i < quadFreqs.length; i++) {
+            // for(var j = 0; j < quadFreqs[i].length; j++) {
+                var baseColor = colorLvls[0];   // use lowest level
+                var currSpanNum = i;
+                // var currQuadNum = j;
+                var spanHandle = $(`#${currSpanNum}.line`);   // note `#x.y` instead of `#x .y`
+                spanHandle.css("background-color", baseColor); // set the background to white for every line
+
+                // Highlight lines that have already been read
+                var freqs = dbQuadFreqs[i];
+                var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+                var MAX = 450;
+                percentRead = (normalisedFreq / MAX) * 100;
+
+                // use linear gradient with given percent to highlight 
+                // the selected span
+                // ONLY if we've read >= 10% of line
+                if (percentRead >= MIN_PERCENT_READ) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[2]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                    dbQuadFreqs[i].push(percentRead);
+                }
+                else {
+                    dbQuadFreqs[i].push(0);
+                }
+            // } 
+        }
+        initialHighlightingDone = true;
+    }
+
+    // console.log(dbQuadFreqs);
+    // console.log(quadFreqs);
+
+    var currQuadId = '';
+    var currLineId = '';
+
+    // -----------------
+    // STEP 1 
+    // -----------------
+    // check if gaze is on a quadrant, line, or neither
+    el = document.elementFromPoint(x, y);
+    // if element under pointer is one of our quads
+    if (el != null){
+        var isSpan = (el.nodeName.toLowerCase() == "span");
+        var spanClassName = $(el).attr('class');
+        if (isSpan) {
+            if (spanClassName == "quad") {
+                // extract and set id of our pointer
+                currQuadId = $(el).attr('id');
+            } else if (spanClassName == "line") {
+                currLineId = $(el).attr('id');
+            }
+        }
+    }
+    
+
+    // -----------------
+    // STEP 2
+    // -----------------
+    // IF gaze was on a line
+    var infoStr = '';               // will fill with info you send back to server
+
+    // CASE 1 - gaze rested on specific quadrant (subset of line)
+    // -----------------
+    if (currQuadId != '') {
+        // parse the quadrant span's ID for quad number and span number
+        // quadNums range [0,3], whereas spans are [0,INF]
+        // In a string XYYYY , X = quad number, Y = span number
+        var quadNum = parseInt(currQuadId.charAt(0));
+        var spanNum = parseInt(currQuadId.substr(1));
+
+        // selector for span containing these quadrants
+        var spanHandle = $(`#${spanNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${spanNum}|${quadNum}|${t}`;
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, spanNum)) {
+            // add to queue
+            lineQueue.push(spanNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for relevant quadrant 
+            // of relevant line in freq matrix
+            quadFreqs[spanNum][quadNum] += 1;
+
+            // use custom formula to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[spanNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+            
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                var dbPercentRead = Math.min(dbQuadFreqs[spanNum][4], 100);
+                if (percentRead > dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${dbPercentRead}%, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (percentRead <= dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]}, ${dbPercentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+    
+    // CASE 2 - gaze rested on a line, but no specific quadrant
+    // -----------------
+    } else if (currLineId != '') {        // Gaze not on a line
+        // id of `line` span == line number of that span
+        var lineNum = currLineId;
+        // get a handle on the span corresponding to that line
+        var spanHandle = $(`#${lineNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${lineNum}|NA|${t}`;
+
+        lineNum = parseInt(lineNum);
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, lineNum)) {
+            // add to queue
+            lineQueue.push(lineNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for quadrants of relevant line in freq matrix
+            // custom decision on how to distribute credit by quadrants
+            // since we don't know of specific quadrant
+            // right now: 4/8, 2/8, 1/8, 1/8 
+            
+            // console.log(quadFreqs);
+            quadFreqs[lineNum][0] += 0.50;
+            quadFreqs[lineNum][1] += 0.25;
+            quadFreqs[lineNum][2] += 0.125;
+            quadFreqs[lineNum][3] += 0.125;
+
+            // use custom formulat to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[lineNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                if (dbQuadFreqs[lineNum][4] == 0) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (dbQuadFreqs[lineNum][4] == 1) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+                
+    // CASE 3 -- gaze did not rest on a line at all
+    // -----------------
+    } else {
+        // record that you weren't looking at a line
+        const t = (new Date()).getTime();
+        infoStr = `-1|-1|${t}`;                        
+    }
+
+    // send info on line num, quad num, and timestamp, back to server
+    // console.log(infoStr);
+    ws.send(infoStr);
+
+}
+
+function highlightMode7(ws, quadFreqs, dbQuadFreqs, x, y) {
+    // INITIALISATION - DONE ONLY ONCE
+    // at first you have to color everything the most basic color
+    // this is only done once, afterwards you'll continue updating
+    // each quadrant individually
+    var colorLvls = ['#ffffff', '#99cfff', '#ffcc66', '#ffccff'];
+
+
+    if (!initialHighlightingDone) {
+        for(var i = 0; i < quadFreqs.length; i++) {
+            // for(var j = 0; j < quadFreqs[i].length; j++) {
+                var baseColor = colorLvls[0];   // use lowest level
+                var currSpanNum = i;
+                // var currQuadNum = j;
+                var spanHandle = $(`#${currSpanNum}.line`);   // note `#x.y` instead of `#x .y`
+                spanHandle.css("background-color", baseColor); // set the background to white for every line
+
+                // Highlight lines that have already been read
+                var freqs = dbQuadFreqs[i];
+                var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+                var MAX = 450;
+                percentRead = (normalisedFreq / MAX) * 100;
+
+                // use linear gradient with given percent to highlight 
+                // the selected span
+                // ONLY if we've read >= 10% of line
+                if (percentRead >= MIN_PERCENT_READ) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[2]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                    dbQuadFreqs[i].push(percentRead);
+                }
+                else {
+                    dbQuadFreqs[i].push(0);
+                }
+            // } 
+        }
+        initialHighlightingDone = true;
+    }
+
+    // console.log(dbQuadFreqs);
+    // console.log(quadFreqs);
+
+    var currQuadId = '';
+    var currLineId = '';
+
+    // -----------------
+    // STEP 1 
+    // -----------------
+    // check if gaze is on a quadrant, line, or neither
+    el = document.elementFromPoint(x, y);
+    // if element under pointer is one of our quads
+    if (el != null){
+        var isSpan = (el.nodeName.toLowerCase() == "span");
+        var spanClassName = $(el).attr('class');
+        if (isSpan) {
+            if (spanClassName == "quad") {
+                // extract and set id of our pointer
+                currQuadId = $(el).attr('id');
+            } else if (spanClassName == "line") {
+                currLineId = $(el).attr('id');
+            }
+        }
+    }
+    
+
+    // -----------------
+    // STEP 2
+    // -----------------
+    // IF gaze was on a line
+    var infoStr = '';               // will fill with info you send back to server
+
+    // CASE 1 - gaze rested on specific quadrant (subset of line)
+    // -----------------
+    if (currQuadId != '') {
+        // parse the quadrant span's ID for quad number and span number
+        // quadNums range [0,3], whereas spans are [0,INF]
+        // In a string XYYYY , X = quad number, Y = span number
+        var quadNum = parseInt(currQuadId.charAt(0));
+        var spanNum = parseInt(currQuadId.substr(1));
+
+        // selector for span containing these quadrants
+        var spanHandle = $(`#${spanNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${spanNum}|${quadNum}|${t}`;
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, spanNum)) {
+            // add to queue
+            lineQueue.push(spanNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for relevant quadrant 
+            // of relevant line in freq matrix
+            quadFreqs[spanNum][quadNum] += 1;
+
+            // use custom formula to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[spanNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+            
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                var dbPercentRead = Math.min(dbQuadFreqs[spanNum][4], 100);
+                if (percentRead > dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${dbPercentRead}%, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (percentRead <= dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]}, ${dbPercentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+    
+    // CASE 2 - gaze rested on a line, but no specific quadrant
+    // -----------------
+    } else if (currLineId != '') {        // Gaze not on a line
+        // id of `line` span == line number of that span
+        var lineNum = currLineId;
+        // get a handle on the span corresponding to that line
+        var spanHandle = $(`#${lineNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${lineNum}|NA|${t}`;
+
+        lineNum = parseInt(lineNum);
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, lineNum)) {
+            // add to queue
+            lineQueue.push(lineNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for quadrants of relevant line in freq matrix
+            // custom decision on how to distribute credit by quadrants
+            // since we don't know of specific quadrant
+            // right now: 4/8, 2/8, 1/8, 1/8 
+            
+            // console.log(quadFreqs);
+            quadFreqs[lineNum][0] += 0.50;
+            quadFreqs[lineNum][1] += 0.25;
+            quadFreqs[lineNum][2] += 0.125;
+            quadFreqs[lineNum][3] += 0.125;
+
+            // use custom formulat to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[lineNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                if (dbQuadFreqs[lineNum][4] == 0) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (dbQuadFreqs[lineNum][4] == 1) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+                
+    // CASE 3 -- gaze did not rest on a line at all
+    // -----------------
+    } else {
+        // record that you weren't looking at a line
+        const t = (new Date()).getTime();
+        infoStr = `-1|-1|${t}`;                        
+    }
+
+    // send info on line num, quad num, and timestamp, back to server
+    // console.log(infoStr);
+    ws.send(infoStr);
+
+}
+
+function highlightMode8(ws, quadFreqs, dbQuadFreqs, x, y) {
+    // INITIALISATION - DONE ONLY ONCE
+    // at first you have to color everything the most basic color
+    // this is only done once, afterwards you'll continue updating
+    // each quadrant individually
+    var colorLvls = ['#ffffff', '#99cfff', '#ffcc66', '#ffccff'];
+
+
+    if (!initialHighlightingDone) {
+        for(var i = 0; i < quadFreqs.length; i++) {
+            // for(var j = 0; j < quadFreqs[i].length; j++) {
+                var baseColor = colorLvls[0];   // use lowest level
+                var currSpanNum = i;
+                // var currQuadNum = j;
+                var spanHandle = $(`#${currSpanNum}.line`);   // note `#x.y` instead of `#x .y`
+                spanHandle.css("background-color", baseColor); // set the background to white for every line
+
+                // Highlight lines that have already been read
+                var freqs = dbQuadFreqs[i];
+                var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+                var MAX = 450;
+                percentRead = (normalisedFreq / MAX) * 100;
+
+                // use linear gradient with given percent to highlight 
+                // the selected span
+                // ONLY if we've read >= 10% of line
+                if (percentRead >= MIN_PERCENT_READ) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[2]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                    dbQuadFreqs[i].push(percentRead);
+                }
+                else {
+                    dbQuadFreqs[i].push(0);
+                }
+            // } 
+        }
+        initialHighlightingDone = true;
+    }
+
+    // console.log(dbQuadFreqs);
+    // console.log(quadFreqs);
+
+    var currQuadId = '';
+    var currLineId = '';
+
+    // -----------------
+    // STEP 1 
+    // -----------------
+    // check if gaze is on a quadrant, line, or neither
+    el = document.elementFromPoint(x, y);
+    // if element under pointer is one of our quads
+    if (el != null){
+        var isSpan = (el.nodeName.toLowerCase() == "span");
+        var spanClassName = $(el).attr('class');
+        if (isSpan) {
+            if (spanClassName == "quad") {
+                // extract and set id of our pointer
+                currQuadId = $(el).attr('id');
+            } else if (spanClassName == "line") {
+                currLineId = $(el).attr('id');
+            }
+        }
+    }
+    
+
+    // -----------------
+    // STEP 2
+    // -----------------
+    // IF gaze was on a line
+    var infoStr = '';               // will fill with info you send back to server
+
+    // CASE 1 - gaze rested on specific quadrant (subset of line)
+    // -----------------
+    if (currQuadId != '') {
+        // parse the quadrant span's ID for quad number and span number
+        // quadNums range [0,3], whereas spans are [0,INF]
+        // In a string XYYYY , X = quad number, Y = span number
+        var quadNum = parseInt(currQuadId.charAt(0));
+        var spanNum = parseInt(currQuadId.substr(1));
+
+        // selector for span containing these quadrants
+        var spanHandle = $(`#${spanNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${spanNum}|${quadNum}|${t}`;
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, spanNum)) {
+            // add to queue
+            lineQueue.push(spanNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for relevant quadrant 
+            // of relevant line in freq matrix
+            quadFreqs[spanNum][quadNum] += 1;
+
+            // use custom formula to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[spanNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+            
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                var dbPercentRead = Math.min(dbQuadFreqs[spanNum][4], 100);
+                if (percentRead > dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${dbPercentRead}%, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (percentRead <= dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]}, ${dbPercentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+    
+    // CASE 2 - gaze rested on a line, but no specific quadrant
+    // -----------------
+    } else if (currLineId != '') {        // Gaze not on a line
+        // id of `line` span == line number of that span
+        var lineNum = currLineId;
+        // get a handle on the span corresponding to that line
+        var spanHandle = $(`#${lineNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${lineNum}|NA|${t}`;
+
+        lineNum = parseInt(lineNum);
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, lineNum)) {
+            // add to queue
+            lineQueue.push(lineNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for quadrants of relevant line in freq matrix
+            // custom decision on how to distribute credit by quadrants
+            // since we don't know of specific quadrant
+            // right now: 4/8, 2/8, 1/8, 1/8 
+            
+            // console.log(quadFreqs);
+            quadFreqs[lineNum][0] += 0.50;
+            quadFreqs[lineNum][1] += 0.25;
+            quadFreqs[lineNum][2] += 0.125;
+            quadFreqs[lineNum][3] += 0.125;
+
+            // use custom formulat to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[lineNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                if (dbQuadFreqs[lineNum][4] == 0) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (dbQuadFreqs[lineNum][4] == 1) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+                
+    // CASE 3 -- gaze did not rest on a line at all
+    // -----------------
+    } else {
+        // record that you weren't looking at a line
+        const t = (new Date()).getTime();
+        infoStr = `-1|-1|${t}`;                        
+    }
+
+    // send info on line num, quad num, and timestamp, back to server
+    // console.log(infoStr);
+    ws.send(infoStr);
+
+}
+
+function highlightMode9(ws, quadFreqs, dbQuadFreqs, x, y) {
+    // INITIALISATION - DONE ONLY ONCE
+    // at first you have to color everything the most basic color
+    // this is only done once, afterwards you'll continue updating
+    // each quadrant individually
+    var colorLvls = ['#ffffff', '#99cfff', '#ffcc66', '#ffccff'];
+
+
+    if (!initialHighlightingDone) {
+        for(var i = 0; i < quadFreqs.length; i++) {
+            // for(var j = 0; j < quadFreqs[i].length; j++) {
+                var baseColor = colorLvls[0];   // use lowest level
+                var currSpanNum = i;
+                // var currQuadNum = j;
+                var spanHandle = $(`#${currSpanNum}.line`);   // note `#x.y` instead of `#x .y`
+                spanHandle.css("background-color", baseColor); // set the background to white for every line
+
+                // Highlight lines that have already been read
+                var freqs = dbQuadFreqs[i];
+                var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+                var MAX = 450;
+                percentRead = (normalisedFreq / MAX) * 100;
+
+                // use linear gradient with given percent to highlight 
+                // the selected span
+                // ONLY if we've read >= 10% of line
+                if (percentRead >= MIN_PERCENT_READ) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[2]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                    dbQuadFreqs[i].push(percentRead);
+                }
+                else {
+                    dbQuadFreqs[i].push(0);
+                }
+            // } 
+        }
+        initialHighlightingDone = true;
+    }
+
+    // console.log(dbQuadFreqs);
+    // console.log(quadFreqs);
+
+    var currQuadId = '';
+    var currLineId = '';
+
+    // -----------------
+    // STEP 1 
+    // -----------------
+    // check if gaze is on a quadrant, line, or neither
+    el = document.elementFromPoint(x, y);
+    // if element under pointer is one of our quads
+    if (el != null){
+        var isSpan = (el.nodeName.toLowerCase() == "span");
+        var spanClassName = $(el).attr('class');
+        if (isSpan) {
+            if (spanClassName == "quad") {
+                // extract and set id of our pointer
+                currQuadId = $(el).attr('id');
+            } else if (spanClassName == "line") {
+                currLineId = $(el).attr('id');
+            }
+        }
+    }
+    
+
+    // -----------------
+    // STEP 2
+    // -----------------
+    // IF gaze was on a line
+    var infoStr = '';               // will fill with info you send back to server
+
+    // CASE 1 - gaze rested on specific quadrant (subset of line)
+    // -----------------
+    if (currQuadId != '') {
+        // parse the quadrant span's ID for quad number and span number
+        // quadNums range [0,3], whereas spans are [0,INF]
+        // In a string XYYYY , X = quad number, Y = span number
+        var quadNum = parseInt(currQuadId.charAt(0));
+        var spanNum = parseInt(currQuadId.substr(1));
+
+        // selector for span containing these quadrants
+        var spanHandle = $(`#${spanNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${spanNum}|${quadNum}|${t}`;
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, spanNum)) {
+            // add to queue
+            lineQueue.push(spanNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for relevant quadrant 
+            // of relevant line in freq matrix
+            quadFreqs[spanNum][quadNum] += 1;
+
+            // use custom formula to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[spanNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+            
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                var dbPercentRead = Math.min(dbQuadFreqs[spanNum][4], 100);
+                if (percentRead > dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${dbPercentRead}%, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (percentRead <= dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]}, ${dbPercentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+    
+    // CASE 2 - gaze rested on a line, but no specific quadrant
+    // -----------------
+    } else if (currLineId != '') {        // Gaze not on a line
+        // id of `line` span == line number of that span
+        var lineNum = currLineId;
+        // get a handle on the span corresponding to that line
+        var spanHandle = $(`#${lineNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${lineNum}|NA|${t}`;
+
+        lineNum = parseInt(lineNum);
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, lineNum)) {
+            // add to queue
+            lineQueue.push(lineNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for quadrants of relevant line in freq matrix
+            // custom decision on how to distribute credit by quadrants
+            // since we don't know of specific quadrant
+            // right now: 4/8, 2/8, 1/8, 1/8 
+            
+            // console.log(quadFreqs);
+            quadFreqs[lineNum][0] += 0.50;
+            quadFreqs[lineNum][1] += 0.25;
+            quadFreqs[lineNum][2] += 0.125;
+            quadFreqs[lineNum][3] += 0.125;
+
+            // use custom formulat to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[lineNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                if (dbQuadFreqs[lineNum][4] == 0) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (dbQuadFreqs[lineNum][4] == 1) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+                
+    // CASE 3 -- gaze did not rest on a line at all
+    // -----------------
+    } else {
+        // record that you weren't looking at a line
+        const t = (new Date()).getTime();
+        infoStr = `-1|-1|${t}`;                        
+    }
+
+    // send info on line num, quad num, and timestamp, back to server
+    // console.log(infoStr);
+    ws.send(infoStr);
+
+}
+
+function highlightMode10(ws, quadFreqs, dbQuadFreqs, x, y) {
+    // INITIALISATION - DONE ONLY ONCE
+    // at first you have to color everything the most basic color
+    // this is only done once, afterwards you'll continue updating
+    // each quadrant individually
+    var colorLvls = ['#ffffff', '#99cfff', '#ffcc66', '#ffccff'];
+
+
+    if (!initialHighlightingDone) {
+        for(var i = 0; i < quadFreqs.length; i++) {
+            // for(var j = 0; j < quadFreqs[i].length; j++) {
+                var baseColor = colorLvls[0];   // use lowest level
+                var currSpanNum = i;
+                // var currQuadNum = j;
+                var spanHandle = $(`#${currSpanNum}.line`);   // note `#x.y` instead of `#x .y`
+                spanHandle.css("background-color", baseColor); // set the background to white for every line
+
+                // Highlight lines that have already been read
+                var freqs = dbQuadFreqs[i];
+                var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+                var MAX = 450;
+                percentRead = (normalisedFreq / MAX) * 100;
+
+                // use linear gradient with given percent to highlight 
+                // the selected span
+                // ONLY if we've read >= 10% of line
+                if (percentRead >= MIN_PERCENT_READ) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[2]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                    dbQuadFreqs[i].push(percentRead);
+                }
+                else {
+                    dbQuadFreqs[i].push(0);
+                }
+            // } 
+        }
+        initialHighlightingDone = true;
+    }
+
+    // console.log(dbQuadFreqs);
+    // console.log(quadFreqs);
+
+    var currQuadId = '';
+    var currLineId = '';
+
+    // -----------------
+    // STEP 1 
+    // -----------------
+    // check if gaze is on a quadrant, line, or neither
+    el = document.elementFromPoint(x, y);
+    // if element under pointer is one of our quads
+    if (el != null){
+        var isSpan = (el.nodeName.toLowerCase() == "span");
+        var spanClassName = $(el).attr('class');
+        if (isSpan) {
+            if (spanClassName == "quad") {
+                // extract and set id of our pointer
+                currQuadId = $(el).attr('id');
+            } else if (spanClassName == "line") {
+                currLineId = $(el).attr('id');
+            }
+        }
+    }
+    
+
+    // -----------------
+    // STEP 2
+    // -----------------
+    // IF gaze was on a line
+    var infoStr = '';               // will fill with info you send back to server
+
+    // CASE 1 - gaze rested on specific quadrant (subset of line)
+    // -----------------
+    if (currQuadId != '') {
+        // parse the quadrant span's ID for quad number and span number
+        // quadNums range [0,3], whereas spans are [0,INF]
+        // In a string XYYYY , X = quad number, Y = span number
+        var quadNum = parseInt(currQuadId.charAt(0));
+        var spanNum = parseInt(currQuadId.substr(1));
+
+        // selector for span containing these quadrants
+        var spanHandle = $(`#${spanNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${spanNum}|${quadNum}|${t}`;
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, spanNum)) {
+            // add to queue
+            lineQueue.push(spanNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for relevant quadrant 
+            // of relevant line in freq matrix
+            quadFreqs[spanNum][quadNum] += 1;
+
+            // use custom formula to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[spanNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+            
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                var dbPercentRead = Math.min(dbQuadFreqs[spanNum][4], 100);
+                if (percentRead > dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${dbPercentRead}%, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (percentRead <= dbPercentRead) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]}, ${dbPercentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+    
+    // CASE 2 - gaze rested on a line, but no specific quadrant
+    // -----------------
+    } else if (currLineId != '') {        // Gaze not on a line
+        // id of `line` span == line number of that span
+        var lineNum = currLineId;
+        // get a handle on the span corresponding to that line
+        var spanHandle = $(`#${lineNum}.line`);     // note `#x.y` instead of `#x .y`
+
+        // record info on line num, quad num, and timestamp
+        const t = (new Date()).getTime();
+        infoStr = `${lineNum}|NA|${t}`;
+
+        lineNum = parseInt(lineNum);
+
+        // if new line is NOT an outlier, process it. Otherwise don't
+        if (lineIsValid(lineQueue, lineNum)) {
+            // add to queue
+            lineQueue.push(lineNum);       // add to end of array
+            // and remove previous oldest from queue (after queue is of length)
+            if (lineQueue.length > QUEUE_LENGTH) {
+                lineQueue.shift(); // removes first element from array
+            }
+
+            // increment entry for quadrants of relevant line in freq matrix
+            // custom decision on how to distribute credit by quadrants
+            // since we don't know of specific quadrant
+            // right now: 4/8, 2/8, 1/8, 1/8 
+            
+            // console.log(quadFreqs);
+            quadFreqs[lineNum][0] += 0.50;
+            quadFreqs[lineNum][1] += 0.25;
+            quadFreqs[lineNum][2] += 0.125;
+            quadFreqs[lineNum][3] += 0.125;
+
+            // use custom formulat to convert frequencies for each
+            // quadrant to a single percent read 
+            var freqs = quadFreqs[lineNum];
+            var normalisedFreq = freqs[0] + freqs[1] + (10*freqs[2]) + (100 * freqs[3]);
+            var MAX = 450;
+            percentRead = (normalisedFreq / MAX) * 100;
+
+            // use linear gradient with given percent to highlight 
+            // the selected span
+            // ONLY if we've read >= 10% of line
+            if (percentRead >= MIN_PERCENT_READ) {
+                if (dbQuadFreqs[lineNum][4] == 0) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[1]}, ${percentRead}%, ${colorLvls[0]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+                else if (dbQuadFreqs[lineNum][4] == 1) {
+                    var backgroundCSS = `linear-gradient(.25turn, ${colorLvls[3]}, ${percentRead}%, ${colorLvls[2]})`;
+                    spanHandle.css("background", backgroundCSS);
+                }
+            }
+        }
+                
+    // CASE 3 -- gaze did not rest on a line at all
+    // -----------------
+    } else {
+        // record that you weren't looking at a line
+        const t = (new Date()).getTime();
+        infoStr = `-1|-1|${t}`;                        
+    }
+
+    // send info on line num, quad num, and timestamp, back to server
+    // console.log(infoStr);
+    ws.send(infoStr);
+
 }
 
 /**
