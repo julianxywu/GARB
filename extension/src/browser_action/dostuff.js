@@ -20,22 +20,33 @@ document.getElementById('signin').onclick = signinUser;
 document.getElementById('signout').onclick = signoutUser;
 document.getElementById('mode1').onclick = changeMode.bind(this, [1]);
 document.getElementById('mode2').onclick = changeMode.bind(this, [2]);
+document.getElementById('mode3').onclick = changeMode.bind(this, [3]);
+document.getElementById('mode4').onclick = changeMode.bind(this, [4]);
+document.getElementById('mode5').onclick = changeMode.bind(this, [5]);
+document.getElementById('mode6').onclick = changeMode.bind(this, [6]);
+document.getElementById('mode7').onclick = changeMode.bind(this, [7]);
+document.getElementById('mode8').onclick = changeMode.bind(this, [8]);
+document.getElementById('mode9').onclick = changeMode.bind(this, [9]);
+document.getElementById('mode10').onclick = changeMode.bind(this, [10]);
 
 function changeMode(i) {
     console.log(i);
-    if (i == 1) {
-        console.log("changing mode to 1");
-        chrome.runtime.getBackgroundPage(async (bgPage) => {
-            await bgPage.sendMode(1);
-        });
-    } else if (i == 2) {
-        console.log("changing mode to 2");
-        chrome.runtime.getBackgroundPage(async (bgPage) => {
-            await bgPage.sendMode(2);
-        });
-    } else {
-        console.log("NO MODE");
-    }
+    chrome.runtime.getBackgroundPage(async (bgPage) => {
+        await bgPage.sendMode(i);
+    });
+    // if (i == 1) {
+    //     console.log("changing mode to 1");
+    //     chrome.runtime.getBackgroundPage(async (bgPage) => {
+    //         await bgPage.sendMode(1);
+    //     });
+    // } else if (i == 2) {
+    //     console.log("changing mode to 2");
+    //     chrome.runtime.getBackgroundPage(async (bgPage) => {
+    //         await bgPage.sendMode(2);
+    //     });
+    // } else {
+    //     console.log("NO MODE");
+    // }
 }
 
 // Function to sign up
