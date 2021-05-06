@@ -10,7 +10,7 @@ distlib==0.3.1
 dnspython==1.16.0
 filelock==3.0.12
 Flask==1.1.2
-Flask-Cors==3.0.8
+Flask-Cors==3.0.9
 goose3==3.1.6
 gunicorn==20.0.4
 heroku==0.1.4
