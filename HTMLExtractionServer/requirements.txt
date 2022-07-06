@@ -21,7 +21,7 @@ jieba==0.42.1
 Jinja2==2.11.2
 joblib==0.16.0
 lazy-object-proxy==1.4.3
-lxml==4.6.2
+lxml==4.9.1
 MarkupSafe==1.1.1
 mccabe==0.6.1
 mysql-connector-python==8.0.19
